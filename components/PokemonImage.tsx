@@ -1,30 +1,18 @@
 "use client";
 
-import Image from "next/image";
 import { useState } from "react";
+import Image, { ImageProps } from "next/image";
 
-interface PokemonImageProps {
-  src: string;
-  alt: string;
-  width?: number;
-  height?: number;
-  className?: string;
-}
-
-export default function PokemonImage({ src, alt, width = 200, height = 200, className }: PokemonImageProps) {
-  const [imgSrc, setImgSrc] = useState(src);
+// Wrapper Image Next.js dengan fitur Fallback jika gambar rusak
+export default function PokemonImage(props: ImageProps) {
+  const [src, setSrc] = useState(props.src);
 
   return (
     <Image
-      src={imgSrc}
-      alt={alt}
-      width={width}
-      height={height}
-      className={className}
-      priority
-      onError={() => {
-        setImgSrc("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/0.png"); // Fallback ke placeholder atau API default
-      }}
+      {...props}
+      src={src}
+      onError={() => setSrc("/fallback-pokeball.png")} // Ganti gambar kalau error
+      className={`${props.className} transition-opacity duration-500`}
     />
   );
 }

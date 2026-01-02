@@ -1,32 +1,17 @@
-import { Metadata } from "next";
-import Link from "next/link";
-import { getPokemonDetail } from "@/lib/api";
 import PokemonDetailClient from "@/components/PokemonDetailClient";
+import { getPokemonDetail } from "@/lib/api";
 
 interface Props {
-  params: Promise<{ name: string }>;
+  params: Promise<{ name: string }>; // Next.js 15+ params harus Promise
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export default async function PokemonDetailPage({ params }: Props) {
+  // 1. Ambil nama dari URL
   const { name } = await params;
-  return {
-    title: `${name.charAt(0).toUpperCase() + name.slice(1)} | Pokedex`,
-  };
-}
 
-export default async function PokemonDetail({ params }: Props) {
-  const { name } = await params;
+  // 2. Fetch data detail di Server
   const pokemon = await getPokemonDetail(name);
 
-  return (
-    <div>
-      {/* Tombol Back global */}
-      <Link href="/" className="fixed top-8 left-8 z-50 bg-white/30 backdrop-blur-md p-3 rounded-full hover:bg-white/50 transition-colors shadow-lg border border-white/20 text-gray-800 font-bold">
-        ← Back
-      </Link>
-      
-      {/* Panggil Client Component */}
-      <PokemonDetailClient pokemon={pokemon} />
-    </div>
-  );
+  // 3. Render Client Component
+  return <PokemonDetailClient pokemon={pokemon} />;
 }

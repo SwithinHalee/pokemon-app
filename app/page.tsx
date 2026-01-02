@@ -1,46 +1,30 @@
-import PokemonCard from "@/components/PokemonCard";
-import Pagination from "@/components/Pagination";
-import { getPokemonList } from "@/lib/api";
+import PokemonListClient from "@/components/PokemonListClient";
+import PokemonSearch from "@/components/PokemonSearch";
+import { getPokemonList, getAllPokemonSlim } from "@/lib/api";
 
-interface HomeProps {
-  searchParams: Promise<{ page?: string }>;
-}
+export default async function Home() {
+  // 1. Ambil Data Awal (Server Side)
+  const initialData = await getPokemonList(20, 0);
 
-export default async function Home({ searchParams }: HomeProps) {
-  // Await searchParams (Next.js 15 requirement)
-  const params = await searchParams;
-  
-  // Logic Pagination
-  const page = Number(params.page) || 1;
-  const limit = 20; // Jumlah pokemon per halaman
-  const offset = (page - 1) * limit;
-
-  // Fetch data dengan offset yang dinamis
-  const pokemonData = await getPokemonList(limit, offset);
-  const totalPages = Math.ceil(pokemonData.count / limit);
+  // 2. Ambil Index Search (Server Side)
+  const allPokemonList = await getAllPokemonSlim();
 
   return (
-    <div className="flex flex-col gap-8 pb-10">
-      <header className="flex justify-between items-center py-6 border-b border-gray-200">
-        <h1 className="text-4xl font-extrabold text-gray-800 tracking-tight">Pokedex</h1>
-        <div className="bg-gray-100 px-4 py-2 rounded-lg text-sm font-medium text-gray-500">
-          Total Pokemon: <span className="text-gray-900 font-bold">{pokemonData.count}</span>
+    <main className="min-h-screen bg-gray-50 pb-20">
+      {/* Header & Search */}
+      <div className="bg-white pb-12 pt-16 px-4 rounded-b-[3rem] shadow-sm mb-8">
+        <div className="max-w-6xl mx-auto text-center">
+            <h1 className="text-4xl md:text-5xl font-extrabold text-gray-800 mb-2 tracking-tight">Pokédex</h1>
+            <p className="text-gray-400 font-medium mb-8">Search specifically for any Pokémon by name</p>
+            
+            <PokemonSearch allPokemon={allPokemonList} />
         </div>
-      </header>
-
-      {/* Grid Pokemon */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {pokemonData.results.map((pokemon) => (
-          <PokemonCard
-            key={pokemon.name}
-            name={pokemon.name}
-            url={pokemon.url}
-          />
-        ))}
       </div>
 
-      {/* Komponen Pagination */}
-      <Pagination page={page} totalPages={totalPages} />
-    </div>
+      {/* Grid List */}
+      <div className="max-w-6xl mx-auto px-4 md:px-8">
+        <PokemonListClient initialData={initialData} />
+      </div>
+    </main>
   );
 }
