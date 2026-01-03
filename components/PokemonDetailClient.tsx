@@ -69,7 +69,9 @@ interface Props {
 export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon }: Props) {
   const [activeTab, setActiveTab] = useState<"About" | "Moves" | "Episodes" | "Cards">("About");
   const [isShiny, setIsShiny] = useState(false);
+  
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const mainType = pokemon.types[0].type.name;
   const bgGradient = BG_COLORS[mainType] || "from-gray-100 to-gray-200";
@@ -86,21 +88,36 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
     }
   };
 
+  // --- UPDATE: SMOOTH SCROLL LOGIC ---
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (scrollContainerRef.current) {
+      // Jika user scroll vertikal (roda mouse), kita ubah jadi horizontal
+      if (e.deltaY !== 0) {
+        // Opsional: Cegah halaman naik-turun saat kursor di area ini
+        // e.preventDefault(); 
+        
+        // Menggunakan behavior: 'smooth' untuk kehalusan ekstra
+        scrollContainerRef.current.scrollBy({
+          left: e.deltaY, 
+          behavior: 'smooth' 
+        });
+      }
+    }
+  };
+
   return (
     <div className={`min-h-screen bg-gradient-to-br ${bgGradient} flex items-center justify-center p-4 md:p-10`}>
-      <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-[98rem] flex flex-col md:flex-row overflow-hidden h-[850px] relative">
+      <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-[85rem] flex flex-col md:flex-row overflow-hidden h-[850px] relative">
         
         {prevPokemon && <NavButton direction="left" id={prevPokemon.id} name={prevPokemon.name} />}
         {nextPokemon && <NavButton direction="right" id={nextPokemon.id} name={nextPokemon.name} />}
 
         {/* KOLOM KIRI */}
-        <div className="md:w-[45%] py-12 pr-10 pl-10 md:pl-60 flex flex-col relative h-full justify-between border-r border-gray-50 overflow-hidden">
+        <div className="md:w-[45%] py-12 pr-10 pl-10 md:pl-52 flex flex-col relative h-full justify-between border-r border-gray-50 overflow-hidden">
           
           <div className="w-full mb-4 relative z-10">
-            
-            {/* --- UPDATE: HEADER NAVIGASI --- */}
+            {/* Navigasi Header */}
             <div className="flex items-center justify-between mb-4">
-                {/* 1. Tombol Back ke Pokedex (Kiri Atas) */}
                 <Link href="/" className="flex items-center gap-2 text-gray-400 hover:text-gray-900 transition-colors group">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="group-hover:-translate-x-1 transition-transform">
                         <path d="M19 12H5"/><path d="m12 19-7-7 7-7"/>
@@ -108,7 +125,6 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
                     <span className="font-extrabold text-sm uppercase tracking-wider">Pokedex</span>
                 </Link>
 
-                {/* 2. ID & Sound (Kanan Atas) */}
                 <div className="flex items-center gap-4">
                     <span className="text-3xl font-bold text-gray-200 whitespace-nowrap">#{String(pokemon.id).padStart(3, "0")}</span>
                     <button onClick={playCry} className="p-3 bg-gray-50 rounded-full hover:bg-gray-100 text-gray-400 transition-colors active:scale-95">
@@ -117,7 +133,6 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
                     <audio ref={audioRef} src={pokemon.cries.latest} hidden />
                 </div>
             </div>
-            {/* ------------------------------- */}
 
             <h1 
                 className="text-4xl lg:text-5xl font-extrabold capitalize text-gray-800 tracking-tight leading-tight break-words"
@@ -136,46 +151,68 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
           </div>
 
           <div className="flex-1 flex items-center justify-center relative shrink min-h-0">
-             <div className="relative w-72 h-72 md:w-[420px] md:h-[420px] z-20 transition-transform duration-700 hover:scale-105">
+             <div className="relative w-60 h-60 md:w-[350px] md:h-[350px] z-20 transition-transform duration-700 hover:scale-105 translate-y-14">
                 <PokemonImage key={currentImage} src={currentImage} alt={pokemon.name} width={500} height={500} className="object-contain drop-shadow-2xl" />
             </div>
-            <div className="absolute w-[450px] h-[450px] bg-gray-100/40 rounded-full blur-[90px] -z-10" />
+            <div className="absolute w-[380px] h-[380px] bg-gray-100/40 rounded-full blur-[90px] -z-10 translate-y-14" />
           </div>
 
-          <div className="mt-4 relative z-10 shrink-0">
+          <div className="mt-24 relative z-10 shrink-0 w-full max-w-full">
             <h3 className="text-gray-300 font-bold text-xs uppercase tracking-[0.3em] mb-5 text-center">Evolution Chain</h3>
-            <div className="flex items-center justify-center gap-8 md:gap-10">
-                {pokemon.evolutions.map((evo, index) => (
-                  <div key={evo.name} className="flex items-center gap-4 md:gap-6">
-                    <Link href={`/pokemon/${evo.name}`} className="group flex flex-col items-center gap-2">
-                      <div className={`w-[86px] h-[86px] rounded-full flex items-center justify-center p-3 transition-all ${pokemon.name === evo.name ? 'bg-white shadow-xl border-2 border-orange-100 scale-110' : 'bg-gray-50 opacity-50 hover:opacity-100 hover:bg-white hover:shadow-lg'}`}>
-                        <PokemonImage src={evo.image} alt={evo.name} width={90} height={90} className="object-contain" />
+            
+            {/* UPDATE PENTING:
+               1. Menambahkan class 'scroll-smooth' agar animasi CSS aktif.
+               2. Tetap menggunakan onWheel handler untuk mapping mouse vertical -> horizontal.
+            */}
+            <div 
+                ref={scrollContainerRef}
+                onWheel={handleWheel}
+                className="w-full overflow-x-auto pb-6 pt-2 px-4 scroll-smooth [-ms-overflow-style:'none'] [scrollbar-width:'none'] [&::-webkit-scrollbar]:hidden"
+            >
+                <div className="flex items-center justify-center min-w-full w-max gap-3 md:gap-6 mx-auto">
+                    {pokemon.evolutions.map((evo, index) => (
+                      <div key={evo.name} className="flex items-center gap-1 md:gap-3">
+                        <Link href={`/pokemon/${evo.name}`} className="group flex flex-col items-center gap-2">
+                          <div className={`w-[86px] h-[86px] rounded-full flex items-center justify-center p-3 transition-all ${pokemon.name === evo.name ? 'bg-white shadow-xl border-2 border-orange-100 scale-110' : 'bg-gray-50 opacity-50 hover:opacity-100 hover:bg-white hover:shadow-lg'}`}>
+                            <PokemonImage src={evo.image} alt={evo.name} width={90} height={90} className="object-contain" />
+                          </div>
+                          <div className="text-center flex flex-col items-center">
+                            <p className="text-[13px] font-bold text-gray-800 capitalize leading-none max-w-[100px] truncate">{evo.name.replace("-", " ")}</p>
+                            <p className="text-[11px] text-gray-300 font-bold mt-1.5">#{String(evo.id).padStart(3, "0")}</p>
+                            
+                            <div className="flex flex-nowrap gap-1 mt-2 justify-center">
+                              {evo.types.map((type) => (
+                                <span 
+                                  key={type} 
+                                  className={`
+                                    ${TYPE_COLORS[type]} 
+                                    text-[9px] text-white 
+                                    px-2 py-0.5 
+                                    rounded-full capitalize font-bold shadow-sm 
+                                    whitespace-nowrap
+                                  `}
+                                >
+                                  {type}
+                                </span>
+                              ))}
+                            </div>
+
+                          </div>
+                        </Link>
+                        {index < pokemon.evolutions.length - 1 && (
+                          <div className="text-gray-200 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                          </div>
+                        )}
                       </div>
-                      <div className="text-center flex flex-col items-center">
-                        <p className="text-[13px] font-bold text-gray-800 capitalize leading-none max-w-[100px] truncate">{evo.name.replace("-", " ")}</p>
-                        <p className="text-[11px] text-gray-300 font-bold mt-1.5">#{String(evo.id).padStart(3, "0")}</p>
-                        <div className="flex flex-wrap gap-1.5 mt-2 justify-center max-w-[120px]">
-                          {evo.types.map((type) => (
-                            <span key={type} className={`${TYPE_COLORS[type]} text-[10px] text-white px-2.5 py-1 rounded-full capitalize font-bold shadow-sm whitespace-nowrap`}>
-                              {type}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    </Link>
-                    {index < pokemon.evolutions.length - 1 && (
-                      <div className="text-gray-200">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                    ))}
+                </div>
             </div>
           </div>
         </div>
 
         {/* KOLOM KANAN (TIDAK BERUBAH) */}
-        <div className="md:w-[55%] py-12 pl-10 pr-10 md:pr-60 bg-white flex flex-col h-full">
+        <div className="md:w-[55%] py-12 pl-10 pr-10 md:pr-52 bg-white flex flex-col h-full">
           <div className="flex gap-12 border-b border-gray-100 mb-8 pb-1 shrink-0">
             {["About", "Moves", "Episodes", "Cards"].map((tab) => (
               <button key={tab} onClick={() => setActiveTab(tab as any)} className={`capitalize pb-4 font-bold text-base transition-all relative ${activeTab === tab ? "text-gray-900 after:absolute after:bottom-0 after:left-0 after:w-full after:h-[4px] after:bg-blue-600 after:rounded-full" : "text-gray-300 hover:text-gray-500"}`}>

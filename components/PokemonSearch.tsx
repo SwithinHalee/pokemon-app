@@ -3,28 +3,28 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 
+// Interface disesuaikan dengan output lib/api.ts terbaru (id berupa number)
 interface Props {
-  allPokemon: { name: string; url: string }[];
+  allPokemon: { name: string; id: number }[];
 }
 
 export default function PokemonSearch({ allPokemon }: Props) {
   // --- STATE ---
   const [query, setQuery] = useState("");
-  const [suggestions, setSuggestions] = useState<{ name: string; id: string }[]>([]);
+  // State suggestions sekarang menyimpan id sebagai number
+  const [suggestions, setSuggestions] = useState<{ name: string; id: number }[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
-
-  const getId = (url: string) => url.split("/").filter(Boolean).pop() || "0";
 
   // --- LOGIKA FILTER ---
   useEffect(() => {
     if (query.length > 1) { 
       const filtered = allPokemon
         .filter((p) => p.name.includes(query.toLowerCase()))
-        .slice(0, 5) // Ambil 5 teratas
-        .map((p) => ({ name: p.name, id: getId(p.url) }));
+        .slice(0, 5); // Ambil 5 teratas
       
+      // Karena ID sudah ada, kita tidak perlu map URL lagi
       setSuggestions(filtered);
       setIsOpen(true);
     } else {
@@ -60,7 +60,7 @@ export default function PokemonSearch({ allPokemon }: Props) {
     }
   };
 
-  // --- RENDER ---
+  // --- RENDER (UI PERSIS SEPERTI SEBELUMNYA) ---
   return (
     <div ref={wrapperRef} className="relative w-full max-w-md mx-auto mb-8 z-50">
       <form onSubmit={handleSearchSubmit} className="relative">
@@ -82,8 +82,9 @@ export default function PokemonSearch({ allPokemon }: Props) {
         <div className="absolute top-full left-0 w-full mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden animate-fadeIn">
           {suggestions.map((p) => (
             <button key={p.name} onClick={() => handleSelect(p.name)} className="w-full text-left px-6 py-3 hover:bg-blue-50 flex items-center gap-3 transition-colors border-b border-gray-50 last:border-none">
+              {/* Image Source langsung pakai p.id */}
               <img src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${p.id}.png`} alt={p.name} className="w-8 h-8 object-contain" />
-              <span className="font-bold text-gray-700 capitalize">{p.name}</span>
+              <span className="font-bold text-gray-700 capitalize">{p.name.replace("-", " ")}</span>
             </button>
           ))}
         </div>
