@@ -88,15 +88,9 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
     }
   };
 
-  // --- UPDATE: SMOOTH SCROLL LOGIC ---
   const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
     if (scrollContainerRef.current) {
-      // Jika user scroll vertikal (roda mouse), kita ubah jadi horizontal
       if (e.deltaY !== 0) {
-        // Opsional: Cegah halaman naik-turun saat kursor di area ini
-        // e.preventDefault(); 
-        
-        // Menggunakan behavior: 'smooth' untuk kehalusan ekstra
         scrollContainerRef.current.scrollBy({
           left: e.deltaY, 
           behavior: 'smooth' 
@@ -160,10 +154,6 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
           <div className="mt-24 relative z-10 shrink-0 w-full max-w-full">
             <h3 className="text-gray-300 font-bold text-xs uppercase tracking-[0.3em] mb-5 text-center">Evolution Chain</h3>
             
-            {/* UPDATE PENTING:
-               1. Menambahkan class 'scroll-smooth' agar animasi CSS aktif.
-               2. Tetap menggunakan onWheel handler untuk mapping mouse vertical -> horizontal.
-            */}
             <div 
                 ref={scrollContainerRef}
                 onWheel={handleWheel}
@@ -211,7 +201,7 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
           </div>
         </div>
 
-        {/* KOLOM KANAN (TIDAK BERUBAH) */}
+        {/* KOLOM KANAN */}
         <div className="md:w-[55%] py-12 pl-10 pr-10 md:pr-52 bg-white flex flex-col h-full">
           <div className="flex gap-12 border-b border-gray-100 mb-8 pb-1 shrink-0">
             {["About", "Moves", "Episodes", "Cards"].map((tab) => (
@@ -272,12 +262,7 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
                   </div>
                 </div>
 
-                <div className="mb-8">
-                  <h3 className="font-extrabold text-gray-900 text-base mb-3 uppercase tracking-widest">Game Appearances</h3>
-                  <div className="flex gap-2 flex-wrap">
-                      {pokemon.game_indices.map((g) => (<span key={g.version.name} className="px-3 py-1.5 bg-white border border-gray-200 text-gray-600 rounded-lg text-xs font-bold capitalize shadow-sm transition-all hover:bg-gray-50 hover:text-gray-900 hover:border-gray-300">{g.version.name.replace("-", " ")}</span>))}
-                  </div>
-                </div>
+                {/* GAME APPEARANCES DIHAPUS DARI SINI */}
 
                 <div>
                   <h3 className="font-extrabold text-gray-900 text-base mb-4 uppercase tracking-widest">Stats</h3>
