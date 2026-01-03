@@ -132,6 +132,19 @@ export async function getPokemonDetail(name: string): Promise<PokemonDetail> {
   }
 }
 
+export async function getPokemonNameById(id: number): Promise<string | null> {
+  if (id < 1) return null; // Tidak ada pokemon dengan ID < 1
+  try {
+    // Kita gunakan endpoint utama, tapi tujuannya cuma ambil namanya
+    const res = await fetchWithRetry(`${BASE_URL}/pokemon/${id}`, { next: { revalidate: 604800 } }); // Cache seminggu
+    const data = await res.json();
+    return data.name;
+  } catch (error) {
+    // Jangan log error ini, karena wajar jika ID tidak ditemukan (misal di ujung list)
+    return null;
+  }
+}
+
 // --- UTILITIES ---
 
 function getIdFromUrl(url: string): string {
