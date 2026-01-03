@@ -4,9 +4,9 @@ interface Props {
   max?: number;
 }
 
-export default function StatBar({ label, value, max = 255 }: Props) {
+export default function StatBar({ label, value, max = 120 }: Props) {
   // Hitung persentase lebar bar
-  const percentage = Math.min((value / max) * 100, 100);
+  const percentage = Math.min((value / max) * 120, 100);
 
   // Tentukan warna bar berdasarkan nilai (Merah -> Hijau)
   const colorClass = value < 60 ? "bg-red-500" : value < 90 ? "bg-yellow-500" : "bg-green-500";
