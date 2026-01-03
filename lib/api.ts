@@ -1,7 +1,7 @@
 const POKEAPI_BASE_URL = "https://pokeapi.co/api/v2";
 
 // ==========================================
-// 1. UTILITY: Fetcher Pintar (Anti-Lelet)
+// 1. UTILITY: Fetcher Pintar
 // ==========================================
 async function fetchWithRetry(url: string, retries = 3, delay = 1000): Promise<any> {
   try {
@@ -9,55 +9,87 @@ async function fetchWithRetry(url: string, retries = 3, delay = 1000): Promise<a
       next: { revalidate: 86400 }, // Cache 24 jam
     });
 
-    // Jika 404, JANGAN retry. Langsung throw error agar cepat.
-    if (res.status === 404) {
-      throw new Error(`HTTP 404`);
-    }
-
-    if (!res.ok) {
-      throw new Error(`HTTP error! status: ${res.status}`);
-    }
+    if (res.status === 404) throw new Error(`HTTP 404`);
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
 
     return await res.json();
   } catch (err: any) {
-    // Jika errornya 404, hentikan retry, langsung lempar error keluar
-    if (err.message === "HTTP 404") {
-      throw err;
-    }
-
-    // Jika error lain (koneksi), baru lakukan retry
+    if (err.message === "HTTP 404") throw err;
     if (retries <= 1) {
       console.error(`💀 Fetch Gagal [${url}]:`, err.message);
       throw err;
     }
-    
     await new Promise((resolve) => setTimeout(resolve, delay));
     return fetchWithRetry(url, retries - 1, delay * 2);
   }
 }
 
-// Helper: Ambil Tipe Pokemon dengan aman
 async function fetchPokemonTypes(name: string): Promise<string[]> {
   try {
     const data = await fetchWithRetry(`${POKEAPI_BASE_URL}/pokemon/${name}`);
     return data.types.map((t: any) => t.type.name);
   } catch (error) {
-    return []; // Return kosong agar tidak crash
+    return [];
   }
 }
 
 // ==========================================
-// 2. FUNGSI UNTUK DETAIL PAGE (UI Slicing)
+// 2. HELPER: Kalkulator Weakness Dinamis
 // ==========================================
+async function calculateWeaknesses(types: any[]): Promise<string[]> {
+  try {
+    // Map untuk menyimpan multiplier damage untuk setiap tipe serangan
+    // Default semua tipe damage adalah 1x (normal)
+    const damageMap: Record<string, number> = {};
 
+    // Ambil detail setiap tipe yang dimiliki pokemon (misal: Fire, Flying)
+    const typePromises = types.map((t) => fetchWithRetry(t.type.url));
+    const typeDetails = await Promise.all(typePromises);
+
+    // Iterasi setiap tipe pokemon untuk update multiplier
+    typeDetails.forEach((typeData: any) => {
+      const damageRelations = typeData.damage_relations;
+
+      // 2x Damage (Weak)
+      damageRelations.double_damage_from.forEach((t: any) => {
+        damageMap[t.name] = (damageMap[t.name] || 1) * 2;
+      });
+
+      // 0.5x Damage (Resist)
+      damageRelations.half_damage_from.forEach((t: any) => {
+        damageMap[t.name] = (damageMap[t.name] || 1) * 0.5;
+      });
+
+      // 0x Damage (Immune)
+      damageRelations.no_damage_from.forEach((t: any) => {
+        damageMap[t.name] = (damageMap[t.name] || 1) * 0;
+      });
+    });
+
+    // Filter tipe yang multiplier akhirnya > 1 (artinya Weakness)
+    const weaknesses = Object.keys(damageMap).filter((type) => damageMap[type] > 1);
+    return weaknesses;
+  } catch (error) {
+    console.error("Gagal hitung weakness:", error);
+    return []; // Fallback aman
+  }
+}
+
+// ==========================================
+// 3. FUNGSI UTAMA (Get Pokemon Detail)
+// ==========================================
 export async function getPokemon(name: string) {
   try {
     const pokemon = await fetchWithRetry(`${POKEAPI_BASE_URL}/pokemon/${name}`);
     const species = await fetchWithRetry(pokemon.species.url);
 
+    // Fetch Evolution Chain
     const evolutionChainUrl = species.evolution_chain.url;
     const evolutionData = await fetchWithRetry(evolutionChainUrl);
     const evolutions = await getEvolutionChain(evolutionData.chain);
+
+    // Fetch Weaknesses (BARU)
+    const weaknesses = await calculateWeaknesses(pokemon.types);
 
     const storyEntry = species.flavor_text_entries.find(
       (entry: any) => entry.language.name === "en"
@@ -81,6 +113,7 @@ export async function getPokemon(name: string) {
       gender_rate: species.gender_rate,
       game_indices: pokemon.game_indices,
       moves: pokemon.moves,
+      weaknesses, // <--- Field baru ditambahkan ke return object
       story,
       evolutions,
     };
@@ -90,6 +123,9 @@ export async function getPokemon(name: string) {
   }
 }
 
+// ==========================================
+// 4. LOGIC: Evolution Chain
+// ==========================================
 async function getEvolutionChain(chain: any): Promise<any[]> {
   const speciesName = chain.species.name;
   const speciesUrl = chain.species.url;
@@ -135,49 +171,33 @@ export async function getPreviousNextPokemon(currentId: number) {
 }
 
 // ==========================================
-// 3. FUNGSI UNTUK HOME PAGE (List & Search)
+// 5. FUNGSI HOME PAGE & SEARCH
 // ==========================================
-
-// Fungsi ini yang DICARI oleh app/page.tsx (Penyebab Error)
 export async function getPokemonList(limit: number = 24, offset: number = 0) {
   try {
     const data = await fetchWithRetry(`${POKEAPI_BASE_URL}/pokemon?limit=${limit}&offset=${offset}`);
-    
-    // Map data agar punya ID dan Gambar untuk ditampilkan di Card
-    const pokemonList = data.results.map((p: any) => {
-      // Extract ID dari URL (contoh: .../pokemon/1/)
+    return data.results.map((p: any) => {
       const urlParts = p.url.split("/");
       const id = parseInt(urlParts[urlParts.length - 2]);
-      
       return {
         id: id,
         name: p.name,
         image: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`,
       };
     });
-
-    return pokemonList;
   } catch (error) {
     console.error("Failed to fetch pokemon list:", error);
     return [];
   }
 }
 
-// Fungsi untuk Search Bar (Mengembalikan ID & Nama)
 export async function getAllPokemonSlim() {
   try {
-    // Limit 2000 agar mencakup semua Gen 1-9
     const data = await fetchWithRetry(`${POKEAPI_BASE_URL}/pokemon?limit=2000`);
-    
     return data.results.map((p: any) => {
-      // Ekstrak ID dari URL di server side agar client tidak perlu split string
       const urlParts = p.url.split("/");
       const id = parseInt(urlParts[urlParts.length - 2]);
-      
-      return { 
-        name: p.name, 
-        id: id 
-      };
+      return { name: p.name, id: id };
     });
   } catch (error) {
     console.error("Failed to fetch all pokemon slim:", error);

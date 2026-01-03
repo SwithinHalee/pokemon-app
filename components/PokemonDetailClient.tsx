@@ -4,7 +4,7 @@ import { useState, useRef } from "react";
 import Link from "next/link";
 import PokemonImage from "./PokemonImage";
 import StatBar from "./StatBar";
-import { PokemonDetail } from "@/types";
+import { PokemonDetail } from "@/types"; 
 import { TYPE_COLORS, BG_COLORS } from "@/lib/constants";
 
 // ... (NavButton TIDAK BERUBAH) ...
@@ -61,7 +61,7 @@ const NavButton = ({ direction, id, name }: { direction: 'left' | 'right', id: n
 };
 
 interface Props {
-  pokemon: PokemonDetail;
+  pokemon: PokemonDetail & { weaknesses?: string[] }; 
   prevPokemon: { id: number; name: string } | null;
   nextPokemon: { id: number; name: string } | null;
 }
@@ -98,6 +98,8 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
       }
     }
   };
+
+  const safeWeaknesses = pokemon.weaknesses || [];
 
   return (
     <div className={`min-h-screen bg-gradient-to-br ${bgGradient} flex items-center justify-center p-4 md:p-10`}>
@@ -154,10 +156,18 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
           <div className="mt-24 relative z-10 shrink-0 w-full max-w-full">
             <h3 className="text-gray-300 font-bold text-xs uppercase tracking-[0.3em] mb-5 text-center">Evolution Chain</h3>
             
+            {/* UPDATE SCROLL CONTAINER:
+               1. px-12 (48px): Menambah padding kiri-kanan agar item pertama/terakhir tidak tertutup efek fade.
+               2. maskImage: Menambahkan efek pudar (gradient) di kiri (0-40px) dan kanan (akhir-40px).
+            */}
             <div 
                 ref={scrollContainerRef}
                 onWheel={handleWheel}
-                className="w-full overflow-x-auto pb-6 pt-2 px-4 scroll-smooth [-ms-overflow-style:'none'] [scrollbar-width:'none'] [&::-webkit-scrollbar]:hidden"
+                className="w-full overflow-x-auto pb-6 pt-2 px-12 scroll-smooth [-ms-overflow-style:'none'] [scrollbar-width:'none'] [&::-webkit-scrollbar]:hidden"
+                style={{
+                    maskImage: 'linear-gradient(to right, transparent, black 40px, black calc(100% - 40px), transparent)',
+                    WebkitMaskImage: 'linear-gradient(to right, transparent, black 40px, black calc(100% - 40px), transparent)'
+                }}
             >
                 <div className="flex items-center justify-center min-w-full w-max gap-3 md:gap-6 mx-auto">
                     {pokemon.evolutions.map((evo, index) => (
@@ -215,12 +225,22 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
             {activeTab === "About" && (
               <div className="h-full overflow-y-auto pb-8 animate-fadeIn [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
                 
+                {/* --- BAGIAN WEAKNESS DINAMIS --- */}
                 <div className="mb-6">
                   <h3 className="font-extrabold text-gray-900 text-base mb-3 uppercase tracking-widest">Weaknesses</h3>
-                  <div className="flex gap-2">
-                    <span className="bg-blue-500 text-white px-4 py-1.5 rounded-xl text-sm font-bold shadow-sm">Water</span>
-                    <span className="bg-yellow-600 text-white px-4 py-1.5 rounded-xl text-sm font-bold shadow-sm">Ground</span>
-                    <span className="bg-gray-500 text-white px-4 py-1.5 rounded-xl text-sm font-bold shadow-sm">Rock</span>
+                  <div className="flex gap-2 flex-wrap">
+                    {safeWeaknesses.length > 0 ? (
+                      safeWeaknesses.map((weakness) => (
+                        <span 
+                          key={weakness} 
+                          className={`${TYPE_COLORS[weakness] || "bg-gray-400"} text-white px-4 py-1.5 rounded-xl text-sm font-bold shadow-sm capitalize`}
+                        >
+                          {weakness}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-gray-400 text-sm italic">None (or loading...)</span>
+                    )}
                   </div>
                 </div>
 
@@ -242,27 +262,25 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
                     <p className="text-gray-400 text-[11px] font-bold mb-1 uppercase tracking-tighter">Height</p>
                     <p className="text-gray-800 font-extrabold text-lg">{formatVal(pokemon.height)}m</p>
                   </div>
-                  <div className="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm text-center transition-hover hover:border-blue-100">
+                  <div className="col-span-2 bg-white p-4 rounded-3xl border border-gray-100 shadow-sm text-center transition-hover hover:border-blue-100">
                     <p className="text-gray-400 text-[11px] font-bold mb-1 uppercase tracking-tighter">Category</p>
                     <p className="text-gray-800 font-extrabold text-lg truncate">{pokemon.category}</p>
-                  </div>
-                  <div className="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm text-center transition-hover hover:border-blue-100">
-                    <p className="text-gray-400 text-[11px] font-bold mb-1 uppercase tracking-tighter">Gender</p>
-                    <div className="flex items-center justify-center gap-2 text-sm font-extrabold">
-                      {isGenderless ? <span className="text-gray-400">N/A</span> : <><span className="text-blue-500">♂ {malePct}%</span><span className="text-pink-500">♀ {femalePct}%</span></>}
-                    </div>
                   </div>
                   <div className="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm text-center transition-hover hover:border-blue-100">
                     <p className="text-gray-400 text-[11px] font-bold mb-1 uppercase tracking-tighter">Weight</p>
                     <p className="text-gray-800 font-extrabold text-lg">{formatVal(pokemon.weight)}kg</p>
                   </div>
-                  <div className="col-span-2 bg-white p-4 rounded-3xl border border-gray-100 shadow-sm transition-hover hover:border-blue-100">
+                  <div className="col-span-2 bg-white p-4 rounded-3xl border border-gray-100 shadow-sm text-center transition-hover hover:border-blue-100">
+                    <p className="text-gray-400 text-[11px] font-bold mb-1 uppercase tracking-tighter">Gender</p>
+                    <div className="flex items-center justify-center gap-2 text-sm font-extrabold">
+                      {isGenderless ? <span className="text-gray-400">N/A</span> : <><span className="text-blue-500">♂ {malePct}%</span><span className="text-pink-500">♀ {femalePct}%</span></>}
+                    </div>
+                  </div>
+                  <div className="col-span-3 bg-white p-4 rounded-3xl border border-gray-100 shadow-sm transition-hover hover:border-blue-100">
                     <p className="text-gray-400 text-[11px] font-bold mb-1 uppercase tracking-tighter text-center">Abilities</p>
                     <div className="flex gap-2 flex-wrap justify-center">{pokemon.abilities.map((a) => (<span key={a.ability.name} className="capitalize text-gray-800 font-extrabold text-base">{a.ability.name.replace("-", " ")}</span>))}</div>
                   </div>
                 </div>
-
-                {/* GAME APPEARANCES DIHAPUS DARI SINI */}
 
                 <div>
                   <h3 className="font-extrabold text-gray-900 text-base mb-4 uppercase tracking-widest">Stats</h3>
