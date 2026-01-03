@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import PokemonImage from "./PokemonImage";
 import StatBar from "./StatBar";
 import { PokemonDetail } from "@/types"; 
 import { TYPE_COLORS, BG_COLORS } from "@/lib/constants";
 
-// ... (NavButton TIDAK BERUBAH) ...
 const NavButton = ({ direction, id, name }: { direction: 'left' | 'right', id: number, name: string }) => {
   const isLeft = direction === 'left';
   
@@ -99,6 +98,22 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
     }
   };
 
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      const activeElement = document.getElementById(`evo-${pokemon.name}`);
+      
+      if (activeElement) {
+        const container = scrollContainerRef.current;
+        const scrollLeft = activeElement.offsetLeft - (container.clientWidth / 2) + (activeElement.clientWidth / 2);
+        
+        container.scrollTo({
+          left: scrollLeft,
+          behavior: 'smooth'
+        });
+      }
+    }
+  }, [pokemon.name, pokemon.evolutions]);
+
   const safeWeaknesses = pokemon.weaknesses || [];
 
   return (
@@ -108,11 +123,9 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
         {prevPokemon && <NavButton direction="left" id={prevPokemon.id} name={prevPokemon.name} />}
         {nextPokemon && <NavButton direction="right" id={nextPokemon.id} name={nextPokemon.name} />}
 
-        {/* KOLOM KIRI */}
         <div className="md:w-[45%] py-12 pr-10 pl-10 md:pl-52 flex flex-col relative h-full justify-between border-r border-gray-50 overflow-hidden">
           
           <div className="w-full mb-4 relative z-10">
-            {/* Navigasi Header */}
             <div className="flex items-center justify-between mb-4">
                 <Link href="/" className="flex items-center gap-2 text-gray-400 hover:text-gray-900 transition-colors group">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="group-hover:-translate-x-1 transition-transform">
@@ -156,10 +169,6 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
           <div className="mt-24 relative z-10 shrink-0 w-full max-w-full">
             <h3 className="text-gray-300 font-bold text-xs uppercase tracking-[0.3em] mb-5 text-center">Evolution Chain</h3>
             
-            {/* UPDATE SCROLL CONTAINER:
-               1. px-12 (48px): Menambah padding kiri-kanan agar item pertama/terakhir tidak tertutup efek fade.
-               2. maskImage: Menambahkan efek pudar (gradient) di kiri (0-40px) dan kanan (akhir-40px).
-            */}
             <div 
                 ref={scrollContainerRef}
                 onWheel={handleWheel}
@@ -171,7 +180,11 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
             >
                 <div className="flex items-center justify-center min-w-full w-max gap-3 md:gap-6 mx-auto">
                     {pokemon.evolutions.map((evo, index) => (
-                      <div key={evo.name} className="flex items-center gap-1 md:gap-3">
+                      <div 
+                        key={evo.name} 
+                        id={`evo-${evo.name}`}
+                        className="flex items-center gap-1 md:gap-3"
+                      >
                         <Link href={`/pokemon/${evo.name}`} className="group flex flex-col items-center gap-2">
                           <div className={`w-[86px] h-[86px] rounded-full flex items-center justify-center p-3 transition-all ${pokemon.name === evo.name ? 'bg-white shadow-xl border-2 border-orange-100 scale-110' : 'bg-gray-50 opacity-50 hover:opacity-100 hover:bg-white hover:shadow-lg'}`}>
                             <PokemonImage src={evo.image} alt={evo.name} width={90} height={90} className="object-contain" />
@@ -211,7 +224,6 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
           </div>
         </div>
 
-        {/* KOLOM KANAN */}
         <div className="md:w-[55%] py-12 pl-10 pr-10 md:pr-52 bg-white flex flex-col h-full">
           <div className="flex gap-12 border-b border-gray-100 mb-8 pb-1 shrink-0">
             {["About", "Moves", "Episodes", "Cards"].map((tab) => (
@@ -225,7 +237,6 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
             {activeTab === "About" && (
               <div className="h-full overflow-y-auto pb-8 animate-fadeIn [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
                 
-                {/* --- BAGIAN WEAKNESS DINAMIS --- */}
                 <div className="mb-6">
                   <h3 className="font-extrabold text-gray-900 text-base mb-3 uppercase tracking-widest">Weaknesses</h3>
                   <div className="flex gap-2 flex-wrap">
