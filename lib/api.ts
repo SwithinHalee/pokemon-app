@@ -32,9 +32,8 @@ async function fetchPokemonTypes(name: string): Promise<string[]> {
 
 async function fetchMoveDetails(url: string): Promise<any> {
   try {
-    return await fetchWithRetry(url);
+    return await fetchWithRetry(url, 1, 500); 
   } catch (error) {
-    console.error("Failed to fetch move details:", error);
     return null;
   }
 }
@@ -80,26 +79,34 @@ export async function getPokemon(name: string) {
 
     const weaknesses = await calculateWeaknesses(pokemon.types);
 
-    const movePromises = pokemon.moves.map(async (moveEntry: any) => {
-      const moveDetails = await fetchMoveDetails(moveEntry.move.url);
-      if (!moveDetails) return null;
+    const allMoves = [];
+    const BATCH_SIZE = 15; 
 
-      return {
-        name: moveDetails.name,
-        type: moveDetails.type.name,
-        category: moveDetails.damage_class.name,
-        power: moveDetails.power,
-        accuracy: moveDetails.accuracy,
-        pp: moveDetails.pp,
-        learn_details: moveEntry.version_group_details.map((vgd: any) => ({
-          generation: vgd.version_group.name,
-          level: vgd.level_learned_at,
-          method: vgd.move_learn_method.name,
-        })),
-      };
-    });
+    for (let i = 0; i < pokemon.moves.length; i += BATCH_SIZE) {
+      const batch = pokemon.moves.slice(i, i + BATCH_SIZE);
+      
+      const batchPromises = batch.map(async (moveEntry: any) => {
+        const moveDetails = await fetchMoveDetails(moveEntry.move.url);
+        if (!moveDetails) return null;
 
-    const moves = (await Promise.all(movePromises)).filter((m) => m !== null);
+        return {
+          name: moveDetails.name,
+          type: moveDetails.type.name,
+          category: moveDetails.damage_class.name,
+          power: moveDetails.power,
+          accuracy: moveDetails.accuracy,
+          pp: moveDetails.pp,
+          learn_details: moveEntry.version_group_details.map((vgd: any) => ({
+            generation: vgd.version_group.name,
+            level: vgd.level_learned_at,
+            method: vgd.move_learn_method.name,
+          })),
+        };
+      });
+
+      const batchResults = await Promise.all(batchPromises);
+      allMoves.push(...batchResults.filter((m) => m !== null));
+    }
 
     const storyEntry = species.flavor_text_entries.find(
       (entry: any) => entry.language.name === "en"
@@ -122,7 +129,7 @@ export async function getPokemon(name: string) {
       category: species.genera.find((g: any) => g.language.name === "en")?.genus || "Pokemon",
       gender_rate: species.gender_rate,
       game_indices: pokemon.game_indices,
-      moves: moves,
+      moves: allMoves,
       weaknesses,
       story,
       evolutions,

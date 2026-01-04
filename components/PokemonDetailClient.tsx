@@ -287,45 +287,45 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
 
           <div className="flex-1 overflow-hidden">
             {activeTab === "About" && (
-              <div className="h-full overflow-y-auto pb-8 animate-fadeIn [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
-                <div className="mb-6">
-                  <h3 className="font-extrabold text-gray-900 text-base mb-3 uppercase tracking-widest">Weaknesses</h3>
-                  <div className="flex gap-2 flex-wrap">{safeWeaknesses.length > 0 ? safeWeaknesses.map((weakness) => <span key={weakness} className={`${TYPE_COLORS[weakness] || "bg-gray-400"} text-white px-4 py-1.5 rounded-xl text-sm font-bold shadow-sm capitalize`}>{weakness}</span>) : <span className="text-gray-400 text-sm italic">None (or loading...)</span>}</div>
+              <div className="h-full animate-fadeIn">
+                <div className="mb-4">
+                  <h3 className="font-extrabold text-gray-900 text-sm mb-2 uppercase tracking-widest">Weaknesses</h3>
+                  <div className="flex gap-2 flex-wrap">{safeWeaknesses.length > 0 ? safeWeaknesses.map((weakness) => <span key={weakness} className={`${TYPE_COLORS[weakness] || "bg-gray-400"} text-white px-3 py-1 rounded-lg text-xs font-bold shadow-sm capitalize`}>{weakness}</span>) : <span className="text-gray-400 text-xs italic">None (or loading...)</span>}</div>
                 </div>
 
-                <div className="mb-6">
-                  <h3 className="font-extrabold text-gray-900 text-base mb-2 uppercase tracking-widest">Story</h3>
-                  <p className="text-gray-500 text-base leading-relaxed font-medium max-w-xl">{pokemon.story}</p>
+                <div className="mb-4">
+                  <h3 className="font-extrabold text-gray-900 text-sm mb-2 uppercase tracking-widest">Story</h3>
+                  <p className="text-gray-500 text-sm leading-relaxed font-medium max-w-xl">{pokemon.story}</p>
                 </div>
 
-                <div className="mb-6">
-                  <h3 className="font-extrabold text-gray-900 text-base mb-3 uppercase tracking-widest">Versions</h3>
-                  <div className="flex gap-3">
-                    <button onClick={() => setIsShiny(false)} className={`px-5 py-1.5 rounded-full text-sm font-bold border-2 transition-all ${!isShiny ? "border-blue-600 text-blue-600 bg-blue-50/50" : "border-gray-100 text-gray-300"}`}>
+                <div className="mb-4">
+                  <h3 className="font-extrabold text-gray-900 text-sm mb-2 uppercase tracking-widest">Versions</h3>
+                  <div className="flex gap-2">
+                    <button onClick={() => setIsShiny(false)} className={`px-4 py-1 rounded-full text-xs font-bold border-2 transition-all ${!isShiny ? "border-blue-600 text-blue-600 bg-blue-50/50" : "border-gray-100 text-gray-300"}`}>
                       Normal
                     </button>
-                    <button onClick={() => setIsShiny(true)} className={`px-5 py-1.5 rounded-full text-sm font-bold border-2 transition-all ${isShiny ? "border-orange-400 text-orange-500 bg-orange-50" : "border-gray-100 text-gray-300"}`}>
+                    <button onClick={() => setIsShiny(true)} className={`px-4 py-1 rounded-full text-xs font-bold border-2 transition-all ${isShiny ? "border-orange-400 text-orange-500 bg-orange-50" : "border-gray-100 text-gray-300"}`}>
                       Shiny ✨
                     </button>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3 mb-8">
-                  <div className="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm text-center transition-hover hover:border-blue-100">
-                    <p className="text-gray-400 text-[11px] font-bold mb-1 uppercase tracking-tighter">Height</p>
-                    <p className="text-gray-800 font-extrabold text-lg">{formatVal(pokemon.height)}m</p>
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                  <div className="bg-white p-3 rounded-2xl border border-gray-100 shadow-sm text-center transition-hover hover:border-blue-100">
+                    <p className="text-gray-400 text-[10px] font-bold mb-1 uppercase tracking-tighter">Height</p>
+                    <p className="text-gray-800 font-extrabold text-sm">{formatVal(pokemon.height)}m</p>
                   </div>
-                  <div className="col-span-2 bg-white p-4 rounded-3xl border border-gray-100 shadow-sm text-center transition-hover hover:border-blue-100">
-                    <p className="text-gray-400 text-[11px] font-bold mb-1 uppercase tracking-tighter">Category</p>
-                    <p className="text-gray-800 font-extrabold text-lg truncate">{pokemon.category}</p>
+                  <div className="col-span-2 bg-white p-3 rounded-2xl border border-gray-100 shadow-sm text-center transition-hover hover:border-blue-100">
+                    <p className="text-gray-400 text-[10px] font-bold mb-1 uppercase tracking-tighter">Category</p>
+                    <p className="text-gray-800 font-extrabold text-sm truncate">{pokemon.category}</p>
                   </div>
-                  <div className="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm text-center transition-hover hover:border-blue-100">
-                    <p className="text-gray-400 text-[11px] font-bold mb-1 uppercase tracking-tighter">Weight</p>
-                    <p className="text-gray-800 font-extrabold text-lg">{formatVal(pokemon.weight)}kg</p>
+                  <div className="bg-white p-3 rounded-2xl border border-gray-100 shadow-sm text-center transition-hover hover:border-blue-100">
+                    <p className="text-gray-400 text-[10px] font-bold mb-1 uppercase tracking-tighter">Weight</p>
+                    <p className="text-gray-800 font-extrabold text-sm">{formatVal(pokemon.weight)}kg</p>
                   </div>
-                  <div className="col-span-2 bg-white p-4 rounded-3xl border border-gray-100 shadow-sm text-center transition-hover hover:border-blue-100">
-                    <p className="text-gray-400 text-[11px] font-bold mb-1 uppercase tracking-tighter">Gender</p>
-                    <div className="flex items-center justify-center gap-2 text-sm font-extrabold">
+                  <div className="col-span-2 bg-white p-3 rounded-2xl border border-gray-100 shadow-sm text-center transition-hover hover:border-blue-100">
+                    <p className="text-gray-400 text-[10px] font-bold mb-1 uppercase tracking-tighter">Gender</p>
+                    <div className="flex items-center justify-center gap-2 text-xs font-extrabold">
                       {isGenderless ? (
                         <span className="text-gray-400">N/A</span>
                       ) : (
@@ -336,11 +336,11 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
                       )}
                     </div>
                   </div>
-                  <div className="col-span-3 bg-white p-4 rounded-3xl border border-gray-100 shadow-sm transition-hover hover:border-blue-100">
-                    <p className="text-gray-400 text-[11px] font-bold mb-1 uppercase tracking-tighter text-center">Abilities</p>
+                  <div className="col-span-3 bg-white p-3 rounded-2xl border border-gray-100 shadow-sm transition-hover hover:border-blue-100">
+                    <p className="text-gray-400 text-[10px] font-bold mb-1 uppercase tracking-tighter text-center">Abilities</p>
                     <div className="flex gap-2 flex-wrap justify-center">
                       {pokemon.abilities.map((a) => (
-                        <span key={a.ability.name} className="capitalize text-gray-800 font-extrabold text-base">
+                        <span key={a.ability.name} className="capitalize text-gray-800 font-extrabold text-xs">
                           {a.ability.name.replace("-", " ")}
                         </span>
                       ))}
@@ -349,8 +349,8 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
                 </div>
 
                 <div>
-                  <h3 className="font-extrabold text-gray-900 text-base mb-4 uppercase tracking-widest">Stats</h3>
-                  <div className="space-y-3">
+                  <h3 className="font-extrabold text-gray-900 text-sm mb-2 uppercase tracking-widest">Stats</h3>
+                  <div className="space-y-2">
                     {pokemon.stats.map((s) => (
                       <StatBar key={s.stat.name} label={s.stat.name.replace("special-", "Sp. ")} value={s.base_stat} />
                     ))}
