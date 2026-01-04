@@ -3,37 +3,65 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 
-// Interface disesuaikan dengan output lib/api.ts terbaru (id berupa number)
 interface Props {
   allPokemon: { name: string; id: number }[];
 }
 
+const SearchItemImage = ({ id, name }: { id: number; name: string }) => {
+  const [error, setError] = useState(false);
+  const src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
+
+  if (error) {
+    return (
+      <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+        <span className="text-xs font-bold text-blue-600 uppercase">
+          {name.substring(0, 2)}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt={name}
+      className="w-8 h-8 object-contain"
+      onError={() => setError(true)}
+    />
+  );
+};
+
 export default function PokemonSearch({ allPokemon }: Props) {
-  // --- STATE ---
   const [query, setQuery] = useState("");
-  // State suggestions sekarang menyimpan id sebagai number
   const [suggestions, setSuggestions] = useState<{ name: string; id: number }[]>([]);
   const [isOpen, setIsOpen] = useState(false);
+  const [loadingId, setLoadingId] = useState<number | null>(null);
+  
   const wrapperRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  // --- LOGIKA FILTER ---
   useEffect(() => {
-    if (query.length > 1) { 
-      const filtered = allPokemon
-        .filter((p) => p.name.includes(query.toLowerCase()))
-        .slice(0, 5); // Ambil 5 teratas
-      
-      // Karena ID sudah ada, kita tidak perlu map URL lagi
-      setSuggestions(filtered);
-      setIsOpen(true);
-    } else {
+    if (query.length === 0) {
       setSuggestions([]);
       setIsOpen(false);
+      return;
     }
+
+    const timer = setTimeout(() => {
+      const lowerQuery = query.toLowerCase();
+      const filtered = allPokemon
+        .filter((p) => 
+          p.name.toLowerCase().includes(lowerQuery) || 
+          String(p.id).includes(lowerQuery)
+        )
+        .slice(0, 5);
+      setSuggestions(filtered);
+      setIsOpen(true);
+    }, 300);
+
+    return () => clearTimeout(timer);
   }, [query, allPokemon]);
 
-  // Handle Klik di luar (Tutup dropdown)
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
@@ -44,54 +72,71 @@ export default function PokemonSearch({ allPokemon }: Props) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Handle Navigasi
-  const handleSelect = (name: string) => {
-    setQuery(""); 
-    setIsOpen(false); 
+  const handleSelect = (name: string, id: number) => {
+    setLoadingId(id); 
     router.push(`/pokemon/${name}`);
   };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (query && suggestions.length > 0) {
-      handleSelect(suggestions[0].name);
+    if (suggestions.length > 0) {
+      handleSelect(suggestions[0].name, suggestions[0].id);
     } else if (query) {
-        handleSelect(query.toLowerCase());
+        setIsOpen(false);
+        router.push(`/pokemon/${query.toLowerCase()}`);
     }
   };
 
-  // --- RENDER (UI PERSIS SEPERTI SEBELUMNYA) ---
+  const handlePrefetch = (name: string) => {
+    router.prefetch(`/pokemon/${name}`);
+  };
+
   return (
     <div ref={wrapperRef} className="relative w-full max-w-md mx-auto mb-8 z-50">
       <form onSubmit={handleSearchSubmit} className="relative">
         <input
           type="text"
-          placeholder="Search Pokemon..."
+          placeholder="Search by Name or ID..."
           className="w-full px-6 py-4 rounded-full border-none shadow-lg bg-white text-gray-700 font-bold focus:ring-4 focus:ring-blue-100 outline-none transition-all placeholder:font-normal placeholder:text-gray-400"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          onFocus={() => query.length > 1 && setIsOpen(true)}
+          onFocus={() => query.length > 0 && setIsOpen(true)}
         />
         <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700 shadow-md">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
         </button>
       </form>
 
-      {/* Dropdown Suggestions */}
-      {isOpen && suggestions.length > 0 && (
+      {isOpen && query.length > 0 && (
         <div className="absolute top-full left-0 w-full mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden animate-fadeIn">
-          {suggestions.map((p) => (
-            <button key={p.name} onClick={() => handleSelect(p.name)} className="w-full text-left px-6 py-3 hover:bg-blue-50 flex items-center gap-3 transition-colors border-b border-gray-50 last:border-none">
-              {/* Image Source langsung pakai p.id */}
-              <img src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${p.id}.png`} alt={p.name} className="w-8 h-8 object-contain" />
-              <span className="font-bold text-gray-700 capitalize">{p.name.replace("-", " ")}</span>
-            </button>
-          ))}
+          {suggestions.length > 0 ? (
+            suggestions.map((p) => (
+              <button 
+                key={p.name} 
+                onClick={() => handleSelect(p.name, p.id)} 
+                onMouseEnter={() => handlePrefetch(p.name)}
+                disabled={loadingId !== null && loadingId !== p.id}
+                className={`w-full text-left px-6 py-3 hover:bg-blue-50 flex items-center justify-between transition-colors border-b border-gray-50 last:border-none ${loadingId !== null && loadingId !== p.id ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                <div className="flex items-center gap-3">
+                    <SearchItemImage id={p.id} name={p.name} />
+                    <div className="flex flex-col">
+                    <span className="font-bold text-gray-700 capitalize">{p.name.replace("-", " ")}</span>
+                    <span className="text-xs text-gray-400 font-bold">#{String(p.id).padStart(3, "0")}</span>
+                    </div>
+                </div>
+                
+                {loadingId === p.id && (
+                    <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full" />
+                )}
+              </button>
+            ))
+          ) : (
+             <div className="p-4 text-center text-gray-400 font-medium text-sm">
+                No pokemon found
+             </div>
+          )}
         </div>
-      )}
-      
-      {isOpen && query.length > 1 && suggestions.length === 0 && (
-          <div className="absolute top-full left-0 w-full mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 p-4 text-center text-gray-400 font-medium text-sm">No pokemon found</div>
       )}
     </div>
   );
