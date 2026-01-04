@@ -3,7 +3,7 @@ const POKEAPI_BASE_URL = "https://pokeapi.co/api/v2";
 async function fetchWithRetry(url: string, retries = 3, delay = 1000): Promise<any> {
   try {
     const res = await fetch(url, {
-      next: { revalidate: 604800 },
+      next: { revalidate: 604800 }, 
     });
 
     if (res.status === 404) throw new Error(`HTTP 404`);
@@ -45,10 +45,17 @@ export async function getPokemon(name: string) {
     const story = storyEntry
       ? storyEntry.flavor_text.replace(/[\n\f]/g, " ")
       : "No description available.";
+    
+    const varieties = species.varieties.map((v: any) => ({
+      is_default: v.is_default,
+      name: v.pokemon.name,
+      url: v.pokemon.url
+    }));
 
     return {
       id: pokemon.id,
       name: pokemon.name,
+      speciesName: species.name,
       types: pokemon.types,
       height: pokemon.height,
       weight: pokemon.weight,
@@ -60,9 +67,10 @@ export async function getPokemon(name: string) {
       category: species.genera.find((g: any) => g.language.name === "en")?.genus || "Pokemon",
       gender_rate: species.gender_rate,
       game_indices: pokemon.game_indices,
-      moves: pokemon.moves, // Return RAW moves array
+      moves: pokemon.moves, 
       story,
       evolutions,
+      varieties,
     };
   } catch (error) {
     console.error("Critical Error in getPokemon:", error);
@@ -71,13 +79,25 @@ export async function getPokemon(name: string) {
 }
 
 async function getEvolutionChain(chain: any): Promise<any[]> {
-  const speciesName = chain.species.name;
   const speciesUrl = chain.species.url;
   const idMatch = speciesUrl.match(/\/pokemon-species\/(\d+)\//);
   const id = idMatch ? parseInt(idMatch[1]) : 0;
-  const types = await fetchPokemonTypes(speciesName);
+  let validName = chain.species.name;
+  
+  try {
+    const speciesData = await fetchWithRetry(speciesUrl);
+    const defaultVariety = speciesData.varieties.find((v: any) => v.is_default);
+    if (defaultVariety) {
+      validName = defaultVariety.pokemon.name;
+    }
+  } catch (error) {
+    console.warn(`Failed to resolve variety for ${validName}, using species name.`);
+  }
+
+  const types = await fetchPokemonTypes(validName);
+
   const currentEvo = {
-    name: speciesName,
+    name: validName,
     id: id,
     image: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`,
     types: types,
@@ -89,6 +109,7 @@ async function getEvolutionChain(chain: any): Promise<any[]> {
     const results = await Promise.all(promises);
     nextEvos = results.flat();
   }
+
   return [currentEvo, ...nextEvos];
 }
 
@@ -106,6 +127,7 @@ export async function getPreviousNextPokemon(currentId: number) {
     currentId > 1 ? checkPokemon(currentId - 1) : null,
     checkPokemon(currentId + 1),
   ]);
+
   return { prevPokemon: prev, nextPokemon: next };
 }
 
@@ -116,6 +138,7 @@ export async function getPokemonList(limit: number = 24, offset: number = 0) {
     const detailedPromises = data.results.map(async (p: any) => {
       const urlParts = p.url.split("/");
       const id = parseInt(urlParts[urlParts.length - 2]);
+      
       let types: string[] = [];
       try {
         const detail = await fetchWithRetry(p.url);

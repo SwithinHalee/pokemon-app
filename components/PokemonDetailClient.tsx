@@ -2,10 +2,11 @@
 
 import { useState, useRef, useEffect, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation"; // Import useRouter
 import PokemonImage from "./PokemonImage";
 import StatBar from "./StatBar";
 import { PokemonDetail } from "@/types";
-import { TYPE_COLORS, BG_COLORS, TYPE_WEAKNESSES } from "@/lib/constants";
+import { TYPE_COLORS, BG_COLORS, TYPE_DEFENSE_CHART } from "@/lib/constants";
 
 interface MoveDetailInfo {
   type: string;
@@ -18,6 +19,8 @@ interface MoveDetailInfo {
 interface ExtendedPokemonDetail extends Omit<PokemonDetail, "moves"> {
   weaknesses?: string[];
   moves: any[];
+  speciesName: string; 
+  varieties: { is_default: boolean; name: string; url: string }[];
 }
 
 interface Props {
@@ -70,6 +73,7 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const router = useRouter(); // Inisialisasi Router
 
   const mainType = pokemon.types[0].type.name;
   const bgGradient = BG_COLORS[mainType] || "from-gray-100 to-gray-200";
@@ -82,15 +86,45 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
   const sprites = pokemon.sprites.other["official-artwork"];
   const currentImage = (isShiny && sprites.front_shiny) ? sprites.front_shiny : sprites.front_default;
 
+  // --- FEATURE BARU: Background Prefetching Varieties ---
+  useEffect(() => {
+    // Jalankan logika hanya jika ada varieties lebih dari 1
+    if (pokemon.varieties && pokemon.varieties.length > 1) {
+      
+      // Berikan delay 2 detik agar halaman utama render sempurna dulu
+      // supaya tidak bikin berat di awal (CPU/Network spike)
+      const timer = setTimeout(() => {
+        pokemon.varieties.forEach((v) => {
+          // Jangan prefetch diri sendiri
+          if (v.name !== pokemon.name) {
+             // Prefetch data halaman varian lain di background
+             router.prefetch(`/pokemon/${v.name}`);
+          }
+        });
+      }, 2000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [pokemon.varieties, pokemon.name, router]);
+  // ----------------------------------------------------
+
   const weaknesses = useMemo(() => {
-    const typeSet = new Set<string>();
-    pokemon.types.forEach((t) => {
-      const typeName = t.type.name;
-      if (TYPE_WEAKNESSES[typeName]) {
-        TYPE_WEAKNESSES[typeName].forEach((weak) => typeSet.add(weak));
+    const allAttackingTypes = Object.keys(TYPE_DEFENSE_CHART);
+    const calculatedWeaknesses: string[] = [];
+
+    allAttackingTypes.forEach((attackType) => {
+      let totalMultiplier = 1;
+      pokemon.types.forEach((t) => {
+        const defenseType = t.type.name;
+        const multipliers = TYPE_DEFENSE_CHART[defenseType];
+        const multiplier = multipliers && multipliers[attackType] !== undefined ? multipliers[attackType] : 1;
+        totalMultiplier *= multiplier;
+      });
+      if (totalMultiplier > 1) {
+        calculatedWeaknesses.push(attackType);
       }
     });
-    return Array.from(typeSet);
+    return calculatedWeaknesses;
   }, [pokemon.types]);
 
   const availableGenerations = useMemo(() => {
@@ -281,7 +315,7 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
 
           <div className="flex-1 overflow-hidden">
             {activeTab === "About" && (
-              <div className="h-full animate-fadeIn">
+              <div className="h-full overflow-y-auto pb-8 animate-fadeIn [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
                 <div className="mb-4">
                   <h3 className="font-extrabold text-gray-900 text-sm mb-2 uppercase tracking-widest">Weaknesses</h3>
                   <div className="flex gap-2 flex-wrap">{weaknesses.length > 0 ? weaknesses.map((weakness) => <span key={weakness} className={`${TYPE_COLORS[weakness] || "bg-gray-400"} text-white px-3 py-1 rounded-lg text-xs font-bold shadow-sm capitalize`}>{weakness}</span>) : <span className="text-gray-400 text-xs italic">None</span>}</div>
@@ -290,14 +324,44 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
                   <h3 className="font-extrabold text-gray-900 text-sm mb-2 uppercase tracking-widest">Story</h3>
                   <p className="text-gray-500 text-sm leading-relaxed font-medium max-w-xl">{pokemon.story}</p>
                 </div>
-                <div className="mb-4">
-                  <h3 className="font-extrabold text-gray-900 text-sm mb-2 uppercase tracking-widest">Versions</h3>
+                
+                <div className="mb-2">
+                  <h3 className="font-extrabold text-gray-900 text-sm mb-2 uppercase tracking-widest">Appearance</h3>
                   <div className="flex gap-2">
                     <button onClick={() => setIsShiny(false)} className={`px-4 py-1 rounded-full text-xs font-bold border-2 transition-all ${!isShiny ? "border-blue-600 text-blue-600 bg-blue-50/50" : "border-gray-100 text-gray-300"}`}>Normal</button>
                     <button onClick={() => setIsShiny(true)} className={`px-4 py-1 rounded-full text-xs font-bold border-2 transition-all ${isShiny ? "border-orange-400 text-orange-500 bg-orange-50" : "border-gray-100 text-gray-300"}`}>Shiny ✨</button>
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-2 mb-4">
+
+                {pokemon.varieties && pokemon.varieties.length > 1 && (
+                    <div className="mb-4 mt-4">
+                        <h3 className="font-extrabold text-gray-900 text-sm mb-2 uppercase tracking-widest">Forms & Varieties</h3>
+                        <div className="flex gap-2 flex-wrap">
+                            {pokemon.varieties.map((v) => {
+                                const isCurrent = v.name === pokemon.name;
+                                const displayName = v.name === pokemon.speciesName 
+                                  ? "Normal" 
+                                  : v.name.replace(pokemon.speciesName, "").replace(/-/g, " ").trim();
+
+                                return (
+                                    <Link 
+                                      key={v.name} 
+                                      href={`/pokemon/${v.name}`}
+                                      className={`px-4 py-1 rounded-full text-xs font-bold border-2 transition-all capitalize ${
+                                        isCurrent 
+                                          ? "border-purple-600 text-purple-600 bg-purple-50" 
+                                          : "border-gray-100 text-gray-400 hover:border-purple-200 hover:text-purple-400"
+                                      }`}
+                                    >
+                                        {displayName}
+                                    </Link>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+
+                <div className="grid grid-cols-3 gap-2 mb-4 mt-4">
                   <div className="bg-white p-3 rounded-2xl border border-gray-100 shadow-sm text-center transition-hover hover:border-blue-100">
                     <p className="text-gray-400 text-[10px] font-bold mb-1 uppercase tracking-tighter">Height</p>
                     <p className="text-gray-800 font-extrabold text-sm">{formatVal(pokemon.height)}m</p>
@@ -318,7 +382,16 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
                   </div>
                   <div className="col-span-3 bg-white p-3 rounded-2xl border border-gray-100 shadow-sm transition-hover hover:border-blue-100">
                     <p className="text-gray-400 text-[10px] font-bold mb-1 uppercase tracking-tighter text-center">Abilities</p>
-                    <div className="flex gap-2 flex-wrap justify-center">{pokemon.abilities.map((a) => <span key={a.ability.name} className="capitalize text-gray-800 font-extrabold text-xs">{a.ability.name.replace("-", " ")}</span>)}</div>
+                    <div className="flex gap-2 flex-wrap justify-center">
+                        {pokemon.abilities.map((a) => (
+                          <span 
+                            key={a.ability.name} 
+                            className="px-3 py-1 bg-gray-50 text-gray-700 border border-gray-100 rounded-lg text-xs font-bold capitalize shadow-sm hover:bg-blue-50 hover:border-blue-100 hover:text-blue-600 transition-colors"
+                          >
+                            {a.ability.name.replace("-", " ")}
+                          </span>
+                        ))}
+                    </div>
                   </div>
                 </div>
                 <div>
