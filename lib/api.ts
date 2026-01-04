@@ -1,12 +1,9 @@
 const POKEAPI_BASE_URL = "https://pokeapi.co/api/v2";
 
-// ==========================================
-// 1. UTILITY: Fetcher Pintar
-// ==========================================
 async function fetchWithRetry(url: string, retries = 3, delay = 1000): Promise<any> {
   try {
     const res = await fetch(url, {
-      next: { revalidate: 86400 }, // Cache 24 jam
+      next: { revalidate: 86400 },
     });
 
     if (res.status === 404) throw new Error(`HTTP 404`);
@@ -33,69 +30,82 @@ async function fetchPokemonTypes(name: string): Promise<string[]> {
   }
 }
 
-// ==========================================
-// 2. HELPER: Kalkulator Weakness Dinamis
-// ==========================================
+async function fetchMoveDetails(url: string): Promise<any> {
+  try {
+    return await fetchWithRetry(url);
+  } catch (error) {
+    console.error("Failed to fetch move details:", error);
+    return null;
+  }
+}
+
 async function calculateWeaknesses(types: any[]): Promise<string[]> {
   try {
-    // Map untuk menyimpan multiplier damage untuk setiap tipe serangan
-    // Default semua tipe damage adalah 1x (normal)
     const damageMap: Record<string, number> = {};
-
-    // Ambil detail setiap tipe yang dimiliki pokemon (misal: Fire, Flying)
     const typePromises = types.map((t) => fetchWithRetry(t.type.url));
     const typeDetails = await Promise.all(typePromises);
 
-    // Iterasi setiap tipe pokemon untuk update multiplier
     typeDetails.forEach((typeData: any) => {
       const damageRelations = typeData.damage_relations;
 
-      // 2x Damage (Weak)
       damageRelations.double_damage_from.forEach((t: any) => {
         damageMap[t.name] = (damageMap[t.name] || 1) * 2;
       });
 
-      // 0.5x Damage (Resist)
       damageRelations.half_damage_from.forEach((t: any) => {
         damageMap[t.name] = (damageMap[t.name] || 1) * 0.5;
       });
 
-      // 0x Damage (Immune)
       damageRelations.no_damage_from.forEach((t: any) => {
         damageMap[t.name] = (damageMap[t.name] || 1) * 0;
       });
     });
 
-    // Filter tipe yang multiplier akhirnya > 1 (artinya Weakness)
     const weaknesses = Object.keys(damageMap).filter((type) => damageMap[type] > 1);
     return weaknesses;
   } catch (error) {
     console.error("Gagal hitung weakness:", error);
-    return []; // Fallback aman
+    return [];
   }
 }
 
-// ==========================================
-// 3. FUNGSI UTAMA (Get Pokemon Detail)
-// ==========================================
 export async function getPokemon(name: string) {
   try {
     const pokemon = await fetchWithRetry(`${POKEAPI_BASE_URL}/pokemon/${name}`);
     const species = await fetchWithRetry(pokemon.species.url);
 
-    // Fetch Evolution Chain
     const evolutionChainUrl = species.evolution_chain.url;
     const evolutionData = await fetchWithRetry(evolutionChainUrl);
     const evolutions = await getEvolutionChain(evolutionData.chain);
 
-    // Fetch Weaknesses (BARU)
     const weaknesses = await calculateWeaknesses(pokemon.types);
+
+    const movePromises = pokemon.moves.map(async (moveEntry: any) => {
+      const moveDetails = await fetchMoveDetails(moveEntry.move.url);
+      if (!moveDetails) return null;
+
+      return {
+        name: moveDetails.name,
+        type: moveDetails.type.name,
+        category: moveDetails.damage_class.name,
+        power: moveDetails.power,
+        accuracy: moveDetails.accuracy,
+        pp: moveDetails.pp,
+        learn_details: moveEntry.version_group_details.map((vgd: any) => ({
+          generation: vgd.version_group.name,
+          level: vgd.level_learned_at,
+          method: vgd.move_learn_method.name,
+        })),
+      };
+    });
+
+    const moves = (await Promise.all(movePromises)).filter((m) => m !== null);
 
     const storyEntry = species.flavor_text_entries.find(
       (entry: any) => entry.language.name === "en"
     );
-    const story = storyEntry 
-      ? storyEntry.flavor_text.replace(/[\n\f]/g, " ") 
+    const story = storyEntry
+      ? storyEntry.flavor_text.replace(/[\n\f]/g, " ")
       : "No description available.";
 
     return {
@@ -112,8 +122,8 @@ export async function getPokemon(name: string) {
       category: species.genera.find((g: any) => g.language.name === "en")?.genus || "Pokemon",
       gender_rate: species.gender_rate,
       game_indices: pokemon.game_indices,
-      moves: pokemon.moves,
-      weaknesses, // <--- Field baru ditambahkan ke return object
+      moves: moves,
+      weaknesses,
       story,
       evolutions,
     };
@@ -123,13 +133,10 @@ export async function getPokemon(name: string) {
   }
 }
 
-// ==========================================
-// 4. LOGIC: Evolution Chain
-// ==========================================
 async function getEvolutionChain(chain: any): Promise<any[]> {
   const speciesName = chain.species.name;
   const speciesUrl = chain.species.url;
-  
+
   const idMatch = speciesUrl.match(/\/pokemon-species\/(\d+)\//);
   const id = idMatch ? parseInt(idMatch[1]) : 0;
 
@@ -164,15 +171,12 @@ export async function getPreviousNextPokemon(currentId: number) {
 
   const [prev, next] = await Promise.all([
     currentId > 1 ? checkPokemon(currentId - 1) : null,
-    checkPokemon(currentId + 1)
+    checkPokemon(currentId + 1),
   ]);
 
   return { prevPokemon: prev, nextPokemon: next };
 }
 
-// ==========================================
-// 5. FUNGSI HOME PAGE & SEARCH
-// ==========================================
 export async function getPokemonList(limit: number = 24, offset: number = 0) {
   try {
     const data = await fetchWithRetry(`${POKEAPI_BASE_URL}/pokemon?limit=${limit}&offset=${offset}`);
