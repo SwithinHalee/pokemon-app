@@ -2,10 +2,16 @@
 
 Aplikasi Pokédex ini dikembangkan sebagai bagian dari penilaian teknis untuk posisi Frontend Intern. Proyek ini dibangun menggunakan **Next.js 16 (App Router)** dan **Tailwind CSS**, dengan fokus ganda pada pemenuhan persyaratan tugas (*UI Slicing* presisi, Integrasi API) serta optimasi performa tinggi (*High Performance Engineering*).
 
-### 🚀 Live Demo / Deploy Preview
+### Live Demo / Deploy Preview
 Aplikasi dapat diakses secara langsung melalui tautan berikut:
 **[https://pokemon-app-sigma-blond.vercel.app/](https://pokemon-app-sigma-blond.vercel.app/)**
 
+---
+## Project Preview
+
+| Desktop View | Mobile View |
+|:---:|:---:|
+| <img width="700" height="700" alt="Screenshot 2026-01-06 at 03-57-28 Pokédex App" src="https://github.com/user-attachments/assets/13b5e932-4d37-47b4-a183-92361189de41" /> | <img width="326" height="915" alt="Screenshot 2026-01-06 at 04-08-19 Pokédex App" src="https://github.com/user-attachments/assets/087c6926-d4a0-4cfb-afd5-7d4247f32be8" /> |
 ---
 
 ## Fitur Utama & Arsitektur Teknis
@@ -69,7 +75,7 @@ Pastikan lingkungan pengembangan Anda telah memenuhi persyaratan Node.js versi 1
 
 2.  **Kloning Repositori**
     ```bash
-    git clone [https://github.com/username/pokemon-app.git](https://github.com/username/pokemon-app.git)
+    git clone https://github.com/SwithinHalee/pokemon-app
     cd pokemon-app
     ```
 
