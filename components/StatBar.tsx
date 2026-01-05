@@ -1,21 +1,47 @@
-interface Props {
+interface StatBarProps {
   label: string;
   value: number;
   max?: number;
 }
 
-// Komponen Progress Bar untuk menampilkan status (HP, Attack, dll)
-export default function StatBar({ label, value, max = 255 }: Props) {
-  const percentage = Math.min((value / max) * 100, 100);
-  // Warna berubah sesuai nilai stat
-  const colorClass = value < 60 ? "bg-red-500" : value < 90 ? "bg-yellow-500" : "bg-green-500";
+const StatBar = ({ label, value, max = 255 }: StatBarProps) => {
+  // Hitung persentase lebar bar
+  const percent = Math.min((value / max) * 100, 100);
+
+  // Fungsi untuk menentukan warna gradasi yang lebih detail (6 Tingkatan)
+  const getBarColor = (val: number) => {
+    if (val < 30) return "bg-red-600";         // Sangat Rendah (Ex: Magikarp Speed)
+    if (val < 60) return "bg-orange-500";      // Rendah
+    if (val < 90) return "bg-yellow-400";      // Rata-rata (Standar Pokemon)
+    if (val < 120) return "bg-lime-500";       // Bagus
+    if (val < 150) return "bg-green-500";      // Sangat Bagus
+    return "bg-cyan-500";                      // Dewa / Legendaris (150+)
+  };
+
   return (
-    <div className="flex items-center gap-3 text-xs">
-      <span className="w-16 font-bold text-gray-500 uppercase">{label}</span>
-      <span className="w-8 font-bold text-gray-800 text-right">{value}</span>
-      <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-        <div className={`h-full rounded-full ${colorClass}`} style={{ width: `${percentage}%` }} />
+    <div className="flex items-center w-full">
+      {/* LABEL:
+        - w-[85px] md:w-28 : Lebar fix agar muat teks panjang
+        - whitespace-nowrap : Mencegah teks turun baris (solusi masalah Sp. Atk)
+      */}
+      <span className="text-[10px] md:text-xs font-bold text-gray-500 uppercase w-[85px] md:w-28 whitespace-nowrap shrink-0">
+        {label}
+      </span>
+      
+      {/* ANGKA VALUE */}
+      <span className="text-xs md:text-sm font-extrabold text-gray-900 w-8 md:w-10 text-right shrink-0 mr-3">
+        {value}
+      </span>
+
+      {/* BAR CONTAINER */}
+      <div className="h-1.5 md:h-2 w-full bg-gray-100 rounded-full overflow-hidden flex-grow">
+        <div
+          className={`h-full rounded-full transition-all duration-500 ease-out ${getBarColor(value)}`}
+          style={{ width: `${percent}%` }}
+        ></div>
       </div>
     </div>
   );
-}
+};
+
+export default StatBar;
