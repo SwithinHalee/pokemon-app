@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation"; // Import useRouter
+import { useRouter } from "next/navigation";
 import PokemonImage from "./PokemonImage";
 import StatBar from "./StatBar";
 import { PokemonDetail } from "@/types";
@@ -73,7 +73,7 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const router = useRouter(); // Inisialisasi Router
+  const router = useRouter(); 
 
   const mainType = pokemon.types[0].type.name;
   const bgGradient = BG_COLORS[mainType] || "from-gray-100 to-gray-200";
@@ -86,18 +86,12 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
   const sprites = pokemon.sprites.other["official-artwork"];
   const currentImage = (isShiny && sprites.front_shiny) ? sprites.front_shiny : sprites.front_default;
 
-  // --- FEATURE BARU: Background Prefetching Varieties ---
-  useEffect(() => {
-    // Jalankan logika hanya jika ada varieties lebih dari 1
+ useEffect(() => {
     if (pokemon.varieties && pokemon.varieties.length > 1) {
       
-      // Berikan delay 2 detik agar halaman utama render sempurna dulu
-      // supaya tidak bikin berat di awal (CPU/Network spike)
-      const timer = setTimeout(() => {
-        pokemon.varieties.forEach((v) => {
-          // Jangan prefetch diri sendiri
-          if (v.name !== pokemon.name) {
-             // Prefetch data halaman varian lain di background
+       const timer = setTimeout(() => {
+          pokemon.varieties.forEach((v) => {
+            if (v.name !== pokemon.name) {
              router.prefetch(`/pokemon/${v.name}`);
           }
         });
@@ -106,8 +100,7 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
       return () => clearTimeout(timer);
     }
   }, [pokemon.varieties, pokemon.name, router]);
-  // ----------------------------------------------------
-
+  
   const weaknesses = useMemo(() => {
     const allAttackingTypes = Object.keys(TYPE_DEFENSE_CHART);
     const calculatedWeaknesses: string[] = [];

@@ -8,23 +8,17 @@ interface Props {
 }
 
 export default function PokemonCard({ name, url, index }: Props) {
-  // Helper: Ambil ID dari URL API
-  const id = url.split("/").filter(Boolean).pop();
+const id = url.split("/").filter(Boolean).pop();
 
   return (
     <Link 
       href={`/pokemon/${name}`} 
       className="group bg-white rounded-3xl p-6 shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 relative overflow-hidden flex flex-col items-center"
     >
-      {/* Dekorasi Latar Belakang */}
-      <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-gray-50 rounded-full group-hover:bg-blue-50 transition-colors z-0" />
-      
-      {/* ID Number */}
+    <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-gray-50 rounded-full group-hover:bg-blue-50 transition-colors z-0" />
       <div className="relative z-10 w-full flex justify-between items-start mb-2">
          <span className="text-gray-300 font-bold text-xs">#{String(id).padStart(3, '0')}</span>
       </div>
-
-      {/* Gambar Pokemon dengan Efek Hover */}
       <div className="relative z-10 w-32 h-32 mb-4 group-hover:scale-110 transition-transform duration-300">
         <PokemonImage
           src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`}
@@ -35,7 +29,6 @@ export default function PokemonCard({ name, url, index }: Props) {
         />
       </div>
 
-      {/* Nama Pokemon */}
       <h2 className="relative z-10 text-lg font-bold text-gray-800 capitalize mb-1 group-hover:text-blue-600 transition-colors">
         {name.replace("-", " ")}
       </h2>

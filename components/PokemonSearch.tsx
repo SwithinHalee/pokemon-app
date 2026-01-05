@@ -35,7 +35,6 @@ export default function PokemonSearch({ allPokemon }: Props) {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<{ name: string; id: number }[]>([]);
   const [isOpen, setIsOpen] = useState(false);
-  const [loadingId, setLoadingId] = useState<number | null>(null);
   
   const wrapperRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -72,18 +71,17 @@ export default function PokemonSearch({ allPokemon }: Props) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleSelect = (name: string, id: number) => {
-    setLoadingId(id); 
+  const handleSelect = (name: string) => {
+    setIsOpen(false); 
     router.push(`/pokemon/${name}`);
   };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (suggestions.length > 0) {
-      handleSelect(suggestions[0].name, suggestions[0].id);
+      handleSelect(suggestions[0].name);
     } else if (query) {
-        setIsOpen(false);
-        router.push(`/pokemon/${query.toLowerCase()}`);
+        handleSelect(query.toLowerCase());
     }
   };
 
@@ -92,7 +90,7 @@ export default function PokemonSearch({ allPokemon }: Props) {
   };
 
   return (
-    <div ref={wrapperRef} className="relative w-full max-w-md mx-auto mb-8 z-50">
+    <div ref={wrapperRef} className="relative w-full max-w-md mx-auto mb-0 z-50">
       <form onSubmit={handleSearchSubmit} className="relative">
         <input
           type="text"
@@ -113,10 +111,9 @@ export default function PokemonSearch({ allPokemon }: Props) {
             suggestions.map((p) => (
               <button 
                 key={p.name} 
-                onClick={() => handleSelect(p.name, p.id)} 
+                onClick={() => handleSelect(p.name)} 
                 onMouseEnter={() => handlePrefetch(p.name)}
-                disabled={loadingId !== null && loadingId !== p.id}
-                className={`w-full text-left px-6 py-3 hover:bg-blue-50 flex items-center justify-between transition-colors border-b border-gray-50 last:border-none ${loadingId !== null && loadingId !== p.id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className="w-full text-left px-6 py-3 hover:bg-blue-50 flex items-center justify-between transition-colors border-b border-gray-50 last:border-none"
               >
                 <div className="flex items-center gap-3">
                     <SearchItemImage id={p.id} name={p.name} />
@@ -125,10 +122,6 @@ export default function PokemonSearch({ allPokemon }: Props) {
                     <span className="text-xs text-gray-400 font-bold">#{String(p.id).padStart(3, "0")}</span>
                     </div>
                 </div>
-                
-                {loadingId === p.id && (
-                    <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full" />
-                )}
               </button>
             ))
           ) : (

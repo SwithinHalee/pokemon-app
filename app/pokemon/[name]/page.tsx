@@ -1,5 +1,5 @@
 import PokemonDetailClient from "@/components/PokemonDetailClient";
-// Penting: Import fungsi getPokemon dan getPreviousNextPokemon dari lib/api
+// Import fungsi getPokemon dan getPreviousNextPokemon dari lib/api
 import { getPokemon, getPreviousNextPokemon } from "@/lib/api";
 
 interface Props {

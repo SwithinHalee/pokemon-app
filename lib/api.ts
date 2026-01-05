@@ -3,7 +3,7 @@ const POKEAPI_BASE_URL = "https://pokeapi.co/api/v2";
 async function fetchWithRetry(url: string, retries = 3, delay = 1000): Promise<any> {
   try {
     const res = await fetch(url, {
-      next: { revalidate: 604800 }, 
+      next: { revalidate: 604800 },
     });
 
     if (res.status === 404) throw new Error(`HTTP 404`);
@@ -19,6 +19,23 @@ async function fetchWithRetry(url: string, retries = 3, delay = 1000): Promise<a
     await new Promise((resolve) => setTimeout(resolve, delay));
     return fetchWithRetry(url, retries - 1, delay * 2);
   }
+}
+
+export async function enrichPokemonList(slimList: any[]) {
+  const promises = slimList.map(async (p) => {
+    try {
+      const detail = await fetchWithRetry(`${POKEAPI_BASE_URL}/pokemon/${p.id}`);
+      return {
+        ...p,
+        types: detail.types.map((t: any) => t.type.name),
+      };
+    } catch (err) {
+      console.error(`Failed to enrich types for ${p.name}`);
+      return p;
+    }
+  });
+
+  return await Promise.all(promises);
 }
 
 async function fetchPokemonTypes(name: string): Promise<string[]> {
@@ -80,10 +97,10 @@ export async function getPokemon(name: string) {
 
 async function getEvolutionChain(chain: any): Promise<any[]> {
   const speciesUrl = chain.species.url;
-  const idMatch = speciesUrl.match(/\/pokemon-species\/(\d+)\//);
+    const idMatch = speciesUrl.match(/\/pokemon-species\/(\d+)\//);
   const id = idMatch ? parseInt(idMatch[1]) : 0;
+
   let validName = chain.species.name;
-  
   try {
     const speciesData = await fetchWithRetry(speciesUrl);
     const defaultVariety = speciesData.varieties.find((v: any) => v.is_default);
@@ -135,29 +152,39 @@ export async function getPokemonList(limit: number = 24, offset: number = 0) {
   try {
     const data = await fetchWithRetry(`${POKEAPI_BASE_URL}/pokemon?limit=${limit}&offset=${offset}`);
     
-    const detailedPromises = data.results.map(async (p: any) => {
+    const basicList = data.results.map((p: any) => {
       const urlParts = p.url.split("/");
       const id = parseInt(urlParts[urlParts.length - 2]);
-      
-      let types: string[] = [];
-      try {
-        const detail = await fetchWithRetry(p.url);
-        types = detail.types.map((t: any) => t.type.name);
-      } catch (err) {
-        console.error(`Failed to fetch types for ${p.name}`);
-      }
-
       return {
         id: id,
         name: p.name,
         image: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`,
-        types: types,
+        types: [],
       };
     });
+    return await enrichPokemonList(basicList);
 
-    return await Promise.all(detailedPromises);
   } catch (error) {
     console.error("Failed to fetch pokemon list:", error);
+    return [];
+  }
+}
+
+export async function getPokemonByType(type: string) {
+  try {
+    const data = await fetchWithRetry(`${POKEAPI_BASE_URL}/type/${type}`);
+    return data.pokemon.map((p: any) => {
+      const urlParts = p.pokemon.url.split("/");
+      const id = parseInt(urlParts[urlParts.length - 2]);
+      return {
+        id: id,
+        name: p.pokemon.name,
+        image: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`,
+        types: [type],
+      };
+    });
+  } catch (error) {
+    console.error("Failed to fetch pokemon by type:", error);
     return [];
   }
 }
