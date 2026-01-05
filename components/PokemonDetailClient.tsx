@@ -29,7 +29,7 @@ interface Props {
   nextPokemon: { id: number; name: string } | null;
 }
 
-// Tombol navigasi melayang untuk pokemon sebelumnya/berikutnya 
+// Tombol navigasi melayang
 const NavButton = ({ direction, id, name }: { direction: "left" | "right"; id: number; name: string }) => {
   const isLeft = direction === "left";
   return (
@@ -64,7 +64,6 @@ const NavButton = ({ direction, id, name }: { direction: "left" | "right"; id: n
   );
 };
 
-// Komponen Utama Halaman Detail (Client Side)
 export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon }: Props) {
   const [activeTab, setActiveTab] = useState<"About" | "Moves" | "Episodes" | "Cards">("About");
   const [isShiny, setIsShiny] = useState(false);
@@ -87,7 +86,9 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
   const sprites = pokemon.sprites.other["official-artwork"];
   const currentImage = (isShiny && sprites.front_shiny) ? sprites.front_shiny : sprites.front_default;
 
-  // Prefetch data varian pokemon untuk performa instan
+  // Utility class untuk menyembunyikan scrollbar tapi tetap bisa discroll
+  const hideScrollbarClass = "[&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]";
+
   useEffect(() => {
     if (pokemon.varieties && pokemon.varieties.length > 1) {
        const timer = setTimeout(() => {
@@ -101,7 +102,6 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
     }
   }, [pokemon.varieties, pokemon.name, router]);
   
-  // Kalkulasi kelemahan tipe secara komputasi (useMemo) 
   const weaknesses = useMemo(() => {
     const allAttackingTypes = Object.keys(TYPE_DEFENSE_CHART);
     const calculatedWeaknesses: string[] = [];
@@ -121,7 +121,6 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
     return calculatedWeaknesses;
   }, [pokemon.types]);
 
-  // Filter generasi game yang tersedia untuk Moves 
   const availableGenerations = useMemo(() => {
     const gens = new Set<string>();
     pokemon.moves.forEach((moveEntry) => {
@@ -136,7 +135,6 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
     }
   }, [availableGenerations, selectedGen]);
 
-  // Filter daftar jurus (Moves) berdasarkan input user
   const visibleMoves = useMemo(() => {
     if (!selectedGen) return [];
 
@@ -166,7 +164,6 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
       });
   }, [pokemon.moves, selectedGen, selectedMethod, moveDetailsCache]);
 
-  // Fetch detail moves yang sedang dilihat secara bertahap
   useEffect(() => {
     const fetchMissingDetails = async () => {
       const missingMoves = visibleMoves.filter(m => !m.type && !moveDetailsCache[m.name]);
@@ -212,7 +209,6 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
     }
   }, [visibleMoves, moveDetailsCache]);
 
-  // Putar audio suara pokemon
   const playCry = () => {
     if (audioRef.current) {
       audioRef.current.volume = 0.5;
@@ -220,14 +216,12 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
     }
   };
 
-  // Dukungan scroll horizontal dengan mouse wheel
   const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
     if (scrollContainerRef.current && e.deltaY !== 0) {
       scrollContainerRef.current.scrollBy({ left: e.deltaY, behavior: "smooth" });
     }
   };
 
-  // Auto-scroll ke pokemon aktif di evolution chain 
   useEffect(() => {
     if (scrollContainerRef.current) {
       const activeElement = document.getElementById(`evo-${pokemon.name}`);
@@ -240,13 +234,15 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
   }, [pokemon.name, pokemon.evolutions]);
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br ${bgGradient} flex items-center justify-center p-4 md:p-10`}>
-      <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-[85rem] flex flex-col md:flex-row overflow-hidden h-[850px] relative">
+    <div className={`min-h-screen bg-gradient-to-br ${bgGradient} flex items-center justify-center p-0 md:p-10`}>
+      <div className="bg-white rounded-none md:rounded-[3rem] shadow-2xl w-full max-w-[85rem] flex flex-col md:flex-row overflow-hidden h-auto md:h-[850px] relative">
+        
         {prevPokemon && <NavButton direction="left" id={prevPokemon.id} name={prevPokemon.name} />}
         {nextPokemon && <NavButton direction="right" id={nextPokemon.id} name={nextPokemon.name} />}
 
-        {/* Kolom Kiri: Gambar, Nama, Evolusi */}
-        <div className="md:w-[45%] py-12 pr-10 pl-10 md:pl-52 flex flex-col relative h-full justify-between border-r border-gray-50 overflow-hidden">
+        {/* Kolom Kiri */}
+        <div className="w-full md:w-[45%] py-8 px-6 md:py-12 md:pr-10 md:pl-10 lg:pl-52 flex flex-col relative h-auto md:h-full justify-between border-r border-gray-50">
+          
           <div className="w-full mb-4 relative z-10">
             <div className="flex items-center justify-between mb-4">
               <Link href="/" className="flex items-center gap-2 text-gray-400 hover:text-gray-900 transition-colors group">
@@ -254,51 +250,49 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
                 <span className="font-extrabold text-sm uppercase tracking-wider">Pokedex</span>
               </Link>
               <div className="flex items-center gap-4">
-                <span className="text-3xl font-bold text-gray-200 whitespace-nowrap">#{String(pokemon.id).padStart(3, "0")}</span>
-                <button onClick={playCry} className="p-3 bg-gray-50 rounded-full hover:bg-gray-100 text-gray-400 transition-colors active:scale-95">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" /><path d="M15.54 8.46a5 5 0 0 1 0 7.07" /><path d="M19.07 4.93a10 10 0 0 1 0 14.14" /></svg>
+                <span className="text-2xl md:text-3xl font-bold text-gray-200 whitespace-nowrap">#{String(pokemon.id).padStart(3, "0")}</span>
+                <button onClick={playCry} className="p-2 md:p-3 bg-gray-50 rounded-full hover:bg-gray-100 text-gray-400 transition-colors active:scale-95">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" /><path d="M15.54 8.46a5 5 0 0 1 0 7.07" /><path d="M19.07 4.93a10 10 0 0 1 0 14.14" /></svg>
                 </button>
                 {pokemon.cries.latest && <audio ref={audioRef} src={pokemon.cries.latest} hidden />}
               </div>
             </div>
-            <h1 className="text-4xl lg:text-5xl font-extrabold capitalize text-gray-800 tracking-tight leading-tight break-words">{pokemon.name.replace("-", " ")}</h1>
-            <div className="flex gap-3 mt-3 flex-wrap">
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold capitalize text-gray-800 tracking-tight leading-tight break-words">{pokemon.name.replace("-", " ")}</h1>
+            <div className="flex gap-2 md:gap-3 mt-3 flex-wrap">
               {pokemon.types.map((t) => (
-                <span key={t.type.name} className={`${TYPE_COLORS[t.type.name]} text-white px-6 py-2 rounded-full text-sm font-bold capitalize shadow-md`}>{t.type.name}</span>
+                <span key={t.type.name} className={`${TYPE_COLORS[t.type.name]} text-white px-4 md:px-6 py-1.5 md:py-2 rounded-full text-xs md:text-sm font-bold capitalize shadow-md`}>{t.type.name}</span>
               ))}
             </div>
           </div>
 
-          <div className="flex-1 flex items-center justify-center relative shrink min-h-0">
-            <div className="relative w-60 h-60 md:w-[350px] md:h-[350px] z-20 transition-transform duration-700 hover:scale-105 translate-y-14">
+          <div className="flex-1 flex items-center justify-center relative shrink min-h-[250px] md:min-h-0 my-4 md:my-0">
+            <div className="relative w-52 h-52 md:w-[350px] md:h-[350px] z-20 transition-transform duration-700 hover:scale-105 translate-y-4 md:translate-y-14">
               {currentImage ? (
                  <PokemonImage key={currentImage} src={currentImage} alt={pokemon.name} width={500} height={500} className="object-contain drop-shadow-2xl" />
               ) : (
                  <div className="w-full h-full flex items-center justify-center text-gray-300 font-bold">No Image Available</div>
               )}
             </div>
-            <div className="absolute w-[380px] h-[380px] bg-gray-100/40 rounded-full blur-[90px] -z-10 translate-y-14" />
+            <div className="absolute w-[280px] h-[280px] md:w-[380px] md:h-[380px] bg-gray-100/40 rounded-full blur-[60px] md:blur-[90px] -z-10 translate-y-4 md:translate-y-14" />
           </div>
 
-          <div className="mt-24 relative z-10 shrink-0 w-full max-w-full">
-            <h3 className="text-gray-300 font-bold text-xs uppercase tracking-[0.3em] mb-5 text-center">Evolution Chain</h3>
-            <div ref={scrollContainerRef} onWheel={handleWheel} className="w-full overflow-x-auto pb-6 pt-2 px-12 scroll-smooth no-scrollbar">
+          <div className="mt-8 md:mt-24 relative z-10 shrink-0 w-full max-w-full">
+            <h3 className="text-gray-300 font-bold text-[10px] md:text-xs uppercase tracking-[0.3em] mb-3 md:mb-5 text-center">Evolution Chain</h3>
+            {/* HIDE SCROLLBAR ADDED HERE */}
+            <div ref={scrollContainerRef} onWheel={handleWheel} className={`w-full overflow-x-auto pb-4 pt-2 px-4 md:px-12 scroll-smooth ${hideScrollbarClass}`}>
               <div className="flex items-center justify-center min-w-full w-max gap-3 md:gap-6 mx-auto">
                 {pokemon.evolutions.map((evo, index) => (
                   <div key={evo.name} id={`evo-${evo.name}`} className="flex items-center gap-1 md:gap-3">
                     <Link href={`/pokemon/${evo.name}`} className="group flex flex-col items-center gap-2">
-                      <div className={`w-[86px] h-[86px] rounded-full flex items-center justify-center p-3 transition-all ${pokemon.name === evo.name ? "bg-white shadow-xl border-2 border-orange-100 scale-110" : "bg-gray-50 opacity-50 hover:opacity-100 hover:bg-white hover:shadow-lg"}`}>
+                      <div className={`w-[60px] h-[60px] md:w-[86px] md:h-[86px] rounded-full flex items-center justify-center p-2 md:p-3 transition-all ${pokemon.name === evo.name ? "bg-white shadow-xl border-2 border-orange-100 scale-110" : "bg-gray-50 opacity-50 hover:opacity-100 hover:bg-white hover:shadow-lg"}`}>
                         {evo.image && <PokemonImage src={evo.image} alt={evo.name} width={90} height={90} className="object-contain" />}
                       </div>
                       <div className="text-center flex flex-col items-center">
-                        <p className="text-[13px] font-bold text-gray-800 capitalize leading-none max-w-[100px] truncate">{evo.name.replace("-", " ")}</p>
-                        <p className="text-[11px] text-gray-300 font-bold mt-1.5">#{String(evo.id).padStart(3, "0")}</p>
-                        <div className="flex flex-nowrap gap-1 mt-2 justify-center">
-                          {evo.types.map((type) => <span key={type} className={`${TYPE_COLORS[type]} text-[9px] text-white px-2 py-0.5 rounded-full capitalize font-bold shadow-sm`}>{type}</span>)}
-                        </div>
+                        <p className="text-[11px] md:text-[13px] font-bold text-gray-800 capitalize leading-none max-w-[80px] md:max-w-[100px] truncate">{evo.name.replace("-", " ")}</p>
+                        <p className="hidden md:block text-[11px] text-gray-300 font-bold mt-1.5">#{String(evo.id).padStart(3, "0")}</p>
                       </div>
                     </Link>
-                    {index < pokemon.evolutions.length - 1 && <div className="text-gray-200 shrink-0"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg></div>}
+                    {index < pokemon.evolutions.length - 1 && <div className="text-gray-200 shrink-0 scale-75 md:scale-100"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg></div>}
                   </div>
                 ))}
               </div>
@@ -306,38 +300,39 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
           </div>
         </div>
 
-        {/* Kolom Kanan: Detail Statis, Moves, Tabs */}
-        <div className="md:w-[55%] py-12 pl-10 pr-10 md:pr-52 bg-white flex flex-col h-full">
-          <div className="flex gap-12 border-b border-gray-100 mb-8 pb-1 shrink-0">
+        {/* Kolom Kanan */}
+        <div className="w-full md:w-[55%] py-8 px-6 md:py-12 md:pl-10 md:pr-10 lg:pr-52 bg-white flex flex-col h-[600px] md:h-full rounded-t-[2rem] md:rounded-none shadow-[0_-10px_40px_rgba(0,0,0,0.05)] md:shadow-none">
+          {/* HIDE SCROLLBAR ADDED HERE */}
+          <div className={`flex gap-8 md:gap-12 border-b border-gray-100 mb-6 md:mb-8 pb-1 shrink-0 overflow-x-auto ${hideScrollbarClass}`}>
             {["About", "Moves", "Episodes", "Cards"].map((tab) => (
-              <button key={tab} onClick={() => setActiveTab(tab as any)} className={`capitalize pb-4 font-bold text-base transition-all relative ${activeTab === tab ? "text-gray-900 after:absolute after:bottom-0 after:left-0 after:w-full after:h-[4px] after:bg-blue-600 after:rounded-full" : "text-gray-300 hover:text-gray-500"}`}>{tab}</button>
+              <button key={tab} onClick={() => setActiveTab(tab as any)} className={`capitalize pb-4 font-bold text-sm md:text-base transition-all relative whitespace-nowrap ${activeTab === tab ? "text-gray-900 after:absolute after:bottom-0 after:left-0 after:w-full after:h-[4px] after:bg-blue-600 after:rounded-full" : "text-gray-300 hover:text-gray-500"}`}>{tab}</button>
             ))}
           </div>
 
           <div className="flex-1 overflow-hidden">
             {activeTab === "About" && (
-              <div className="h-full overflow-y-auto pb-8 animate-fadeIn no-scrollbar">
-                <div className="mb-4">
-                  <h3 className="font-extrabold text-gray-900 text-sm mb-2 uppercase tracking-widest">Weaknesses</h3>
-                  <div className="flex gap-2 flex-wrap">{weaknesses.length > 0 ? weaknesses.map((weakness) => <span key={weakness} className={`${TYPE_COLORS[weakness] || "bg-gray-400"} text-white px-3 py-1 rounded-lg text-xs font-bold shadow-sm capitalize`}>{weakness}</span>) : <span className="text-gray-400 text-xs italic">None</span>}</div>
+              /* HIDE SCROLLBAR ADDED HERE */
+              <div className={`h-full overflow-y-auto pb-8 animate-fadeIn pr-1 ${hideScrollbarClass}`}>
+                <div className="mb-6">
+                  <h3 className="font-extrabold text-gray-900 text-xs md:text-sm mb-2 uppercase tracking-widest">Weaknesses</h3>
+                  <div className="flex gap-2 flex-wrap">{weaknesses.length > 0 ? weaknesses.map((weakness) => <span key={weakness} className={`${TYPE_COLORS[weakness] || "bg-gray-400"} text-white px-3 py-1 rounded-lg text-[10px] md:text-xs font-bold shadow-sm capitalize`}>{weakness}</span>) : <span className="text-gray-400 text-xs italic">None</span>}</div>
                 </div>
-                <div className="mb-4">
-                  <h3 className="font-extrabold text-gray-900 text-sm mb-2 uppercase tracking-widest">Story</h3>
+                <div className="mb-6">
+                  <h3 className="font-extrabold text-gray-900 text-xs md:text-sm mb-2 uppercase tracking-widest">Story</h3>
                   <p className="text-gray-500 text-sm leading-relaxed font-medium max-w-xl">{pokemon.story}</p>
                 </div>
                 
-                <div className="mb-2">
-                  <h3 className="font-extrabold text-gray-900 text-sm mb-2 uppercase tracking-widest">Appearance</h3>
+                <div className="mb-4">
+                  <h3 className="font-extrabold text-gray-900 text-xs md:text-sm mb-2 uppercase tracking-widest">Appearance</h3>
                   <div className="flex gap-2">
                     <button onClick={() => setIsShiny(false)} className={`px-4 py-1 rounded-full text-xs font-bold border-2 transition-all ${!isShiny ? "border-blue-600 text-blue-600 bg-blue-50/50" : "border-gray-100 text-gray-300"}`}>Normal</button>
                     <button onClick={() => setIsShiny(true)} className={`px-4 py-1 rounded-full text-xs font-bold border-2 transition-all ${isShiny ? "border-orange-400 text-orange-500 bg-orange-50" : "border-gray-100 text-gray-300"}`}>Shiny ✨</button>
                   </div>
                 </div>
 
-                {/* Switcher Form/Varian khusus pokemon seperti Raichu Alola */}
                 {pokemon.varieties && pokemon.varieties.length > 1 && (
-                    <div className="mb-4 mt-4">
-                        <h3 className="font-extrabold text-gray-900 text-sm mb-2 uppercase tracking-widest">Forms & Varieties</h3>
+                    <div className="mb-6 mt-4">
+                        <h3 className="font-extrabold text-gray-900 text-xs md:text-sm mb-2 uppercase tracking-widest">Forms & Varieties</h3>
                         <div className="flex gap-2 flex-wrap">
                             {pokemon.varieties.map((v) => {
                                 const isCurrent = v.name === pokemon.name;
@@ -352,28 +347,28 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
                     </div>
                 )}
 
-                <div className="grid grid-cols-3 gap-2 mb-4 mt-4">
-                  <div className="bg-white p-3 rounded-2xl border border-gray-100 shadow-sm text-center transition-hover hover:border-blue-100">
-                    <p className="text-gray-400 text-[10px] font-bold mb-1 uppercase tracking-tighter">Height</p>
+                <div className="grid grid-cols-3 gap-2 mb-6 mt-4">
+                  <div className="bg-white p-2 md:p-3 rounded-2xl border border-gray-100 shadow-sm text-center transition-hover hover:border-blue-100">
+                    <p className="text-gray-400 text-[9px] md:text-[10px] font-bold mb-1 uppercase tracking-tighter">Height</p>
                     <p className="text-gray-800 font-extrabold text-sm">{formatVal(pokemon.height)}m</p>
                   </div>
-                  <div className="col-span-2 bg-white p-3 rounded-2xl border border-gray-100 shadow-sm text-center transition-hover hover:border-blue-100">
-                    <p className="text-gray-400 text-[10px] font-bold mb-1 uppercase tracking-tighter">Category</p>
+                  <div className="col-span-2 bg-white p-2 md:p-3 rounded-2xl border border-gray-100 shadow-sm text-center transition-hover hover:border-blue-100">
+                    <p className="text-gray-400 text-[9px] md:text-[10px] font-bold mb-1 uppercase tracking-tighter">Category</p>
                     <p className="text-gray-800 font-extrabold text-sm truncate">{pokemon.category}</p>
                   </div>
-                  <div className="bg-white p-3 rounded-2xl border border-gray-100 shadow-sm text-center transition-hover hover:border-blue-100">
-                    <p className="text-gray-400 text-[10px] font-bold mb-1 uppercase tracking-tighter">Weight</p>
+                  <div className="bg-white p-2 md:p-3 rounded-2xl border border-gray-100 shadow-sm text-center transition-hover hover:border-blue-100">
+                    <p className="text-gray-400 text-[9px] md:text-[10px] font-bold mb-1 uppercase tracking-tighter">Weight</p>
                     <p className="text-gray-800 font-extrabold text-sm">{formatVal(pokemon.weight)}kg</p>
                   </div>
-                  <div className="col-span-2 bg-white p-3 rounded-2xl border border-gray-100 shadow-sm text-center transition-hover hover:border-blue-100">
-                    <p className="text-gray-400 text-[10px] font-bold mb-1 uppercase tracking-tighter">Gender</p>
+                  <div className="col-span-2 bg-white p-2 md:p-3 rounded-2xl border border-gray-100 shadow-sm text-center transition-hover hover:border-blue-100">
+                    <p className="text-gray-400 text-[9px] md:text-[10px] font-bold mb-1 uppercase tracking-tighter">Gender</p>
                     <div className="flex items-center justify-center gap-2 text-xs font-extrabold">
                       {isGenderless ? <span className="text-gray-400">N/A</span> : <><span className="text-blue-500">♂ {malePct}%</span><span className="text-pink-500">♀ {femalePct}%</span></>}
                     </div>
                   </div>
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-gray-900 text-sm mb-2 uppercase tracking-widest">Stats</h3>
+                  <h3 className="font-extrabold text-gray-900 text-xs md:text-sm mb-2 uppercase tracking-widest">Stats</h3>
                   <div className="space-y-2">{pokemon.stats.map((s) => <StatBar key={s.stat.name} label={s.stat.name.replace("special-", "Sp. ")} value={s.base_stat} />)}</div>
                 </div>
               </div>
@@ -381,71 +376,71 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
 
             {activeTab === "Moves" && (
               <div className="h-full flex flex-col">
-                {/* Control Panel: Ganti Generasi & Metode Belajar */}
-                <div className="flex flex-wrap gap-4 mb-6 shrink-0 p-1">
-                  <div className="flex flex-col gap-1 relative">
-                    <label htmlFor="gen-select" className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Game Version</label>
+                <div className="flex flex-wrap gap-3 mb-4 shrink-0 p-1">
+                  <div className="flex flex-col gap-1 relative w-1/2 md:w-auto flex-grow">
+                    <label htmlFor="gen-select" className="text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Version</label>
                     <div className="relative group">
-                      <select id="gen-select" value={selectedGen} onChange={(e) => setSelectedGen(e.target.value)} className="appearance-none w-full pl-4 pr-10 py-2 text-sm font-bold rounded-xl bg-gray-50 text-gray-700 border border-gray-100 hover:border-gray-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all cursor-pointer capitalize">
+                      <select id="gen-select" value={selectedGen} onChange={(e) => setSelectedGen(e.target.value)} className="appearance-none w-full pl-3 pr-8 py-2 text-xs md:text-sm font-bold rounded-xl bg-gray-50 text-gray-700 border border-gray-100 hover:border-gray-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all cursor-pointer capitalize">
                         {availableGenerations.map((gen) => <option key={gen} value={gen}>{gen.replace("-", " ")}</option>)}
                       </select>
-                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 group-hover:text-blue-500 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg></div>
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 group-hover:text-blue-500 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg></div>
                     </div>
                   </div>
-                  <div className="flex flex-col gap-1 relative">
-                    <label htmlFor="method-select" className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Learn Method</label>
+                  <div className="flex flex-col gap-1 relative w-[45%] md:w-auto flex-grow">
+                    <label htmlFor="method-select" className="text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Method</label>
                     <div className="relative group">
-                      <select id="method-select" value={selectedMethod} onChange={(e) => setSelectedMethod(e.target.value)} className="appearance-none w-full pl-4 pr-10 py-2 text-sm font-bold rounded-xl bg-gray-50 text-gray-700 border border-gray-100 hover:border-gray-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all cursor-pointer capitalize">
+                      <select id="method-select" value={selectedMethod} onChange={(e) => setSelectedMethod(e.target.value)} className="appearance-none w-full pl-3 pr-8 py-2 text-xs md:text-sm font-bold rounded-xl bg-gray-50 text-gray-700 border border-gray-100 hover:border-gray-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all cursor-pointer capitalize">
                         <option value="level-up">Level Up</option>
                         <option value="machine">TM/HM</option>
                         <option value="egg">Egg Move</option>
                         <option value="tutor">Tutor</option>
-                        <option value="all">All Methods</option>
+                        <option value="all">All</option>
                       </select>
-                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 group-hover:text-blue-500 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg></div>
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 group-hover:text-blue-500 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg></div>
                     </div>
                   </div>
                 </div>
 
-                {/* Tabel daftar jurus */}
-                <div className="flex-1 overflow-y-auto pr-2 no-scrollbar">
+                {/* HIDE SCROLLBAR ADDED HERE */}
+                <div className={`flex-1 overflow-y-auto pr-0 md:pr-2 ${hideScrollbarClass}`}>
                   {visibleMoves.length > 0 ? (
-                    <table className="w-full text-left border-collapse table-fixed">
-                      <thead className="sticky top-0 bg-white z-10">
-                        <tr>
-                          {selectedMethod === "level-up" && <th className="p-2 w-[10%] text-[10px] font-extrabold text-gray-500 uppercase text-center">Lv.</th>}
-                          <th className="p-2 w-[25%] text-[10px] font-extrabold text-gray-500 uppercase">Move</th>
-                          <th className="p-2 w-[20%] text-[10px] font-extrabold text-gray-500 uppercase">Type</th>
-                          <th className="p-2 w-[20%] text-[10px] font-extrabold text-gray-500 uppercase">Cat.</th>
-                          <th className="p-2 w-[10%] text-[10px] font-extrabold text-gray-500 uppercase text-center">Pwr.</th>
-                          <th className="p-2 w-[10%] text-[10px] font-extrabold text-gray-500 uppercase text-center">Acc.</th>
-                          <th className="p-2 w-[5%] text-[10px] font-extrabold text-gray-500 uppercase text-center">PP</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {visibleMoves.map((move, index) => (
-                          <tr key={`${move.name}-${index}`} className="hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-none">
-                            {selectedMethod === "level-up" && <td className="p-2 font-bold text-gray-700 text-sm text-center">{move.level === 0 ? "—" : move.level}</td>}
-                            <td className="p-2 font-bold text-gray-800 text-sm capitalize truncate">{move.name.replace("-", " ")}</td>
-                            <td className="p-2">
-                              {move.type ? (
-                                <span className={`${TYPE_COLORS[move.type]} text-white px-2 py-0.5 rounded-md text-[10px] font-bold capitalize shadow-sm inline-block w-full text-center truncate`}>{move.type}</span>
-                              ) : <span className="animate-pulse bg-gray-200 h-4 w-full rounded inline-block"></span>}
-                            </td>
-                            <td className="p-2">
-                              {move.category ? (
-                                <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold capitalize shadow-sm inline-block w-full text-center truncate ${move.category === "physical" ? "bg-orange-500 text-white" : move.category === "special" ? "bg-blue-500 text-white" : "bg-gray-400 text-white"}`}>{move.category}</span>
-                              ) : <span className="animate-pulse bg-gray-200 h-4 w-full rounded inline-block"></span>}
-                            </td>
-                            <td className="p-2 font-bold text-gray-700 text-sm text-center">{move.type ? (move.power || "—") : "..."}</td>
-                            <td className="p-2 font-bold text-gray-700 text-sm text-center">{move.type ? (move.accuracy ? `${move.accuracy}%` : "—") : "..."}</td>
-                            <td className="p-2 font-bold text-gray-700 text-sm text-center">{move.type ? move.pp : "..."}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                    /* HIDE SCROLLBAR ADDED HERE TOO */
+                    <div className={`overflow-x-auto pb-4 ${hideScrollbarClass}`}>
+                        <table className="w-full text-left border-collapse min-w-[500px] md:min-w-0 table-fixed">
+                        <thead className="sticky top-0 bg-white z-10">
+                            <tr>
+                            {selectedMethod === "level-up" && <th className="p-2 w-[10%] text-[9px] md:text-[10px] font-extrabold text-gray-500 uppercase text-center">Lv.</th>}
+                            <th className="p-2 w-[30%] md:w-[25%] text-[9px] md:text-[10px] font-extrabold text-gray-500 uppercase">Move</th>
+                            <th className="p-2 w-[20%] text-[9px] md:text-[10px] font-extrabold text-gray-500 uppercase">Type</th>
+                            <th className="p-2 w-[20%] text-[9px] md:text-[10px] font-extrabold text-gray-500 uppercase">Cat.</th>
+                            <th className="p-2 w-[10%] text-[9px] md:text-[10px] font-extrabold text-gray-500 uppercase text-center">Pwr.</th>
+                            <th className="p-2 w-[10%] text-[9px] md:text-[10px] font-extrabold text-gray-500 uppercase text-center">Acc.</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {visibleMoves.map((move, index) => (
+                            <tr key={`${move.name}-${index}`} className="hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-none">
+                                {selectedMethod === "level-up" && <td className="p-2 font-bold text-gray-700 text-xs md:text-sm text-center">{move.level === 0 ? "—" : move.level}</td>}
+                                <td className="p-2 font-bold text-gray-800 text-xs md:text-sm capitalize truncate">{move.name.replace("-", " ")}</td>
+                                <td className="p-2">
+                                {move.type ? (
+                                    <span className={`${TYPE_COLORS[move.type]} text-white px-2 py-0.5 rounded-md text-[9px] md:text-[10px] font-bold capitalize shadow-sm inline-block w-full text-center truncate`}>{move.type}</span>
+                                ) : <span className="animate-pulse bg-gray-200 h-4 w-full rounded inline-block"></span>}
+                                </td>
+                                <td className="p-2">
+                                {move.category ? (
+                                    <span className={`px-2 py-0.5 rounded-md text-[9px] md:text-[10px] font-bold capitalize shadow-sm inline-block w-full text-center truncate ${move.category === "physical" ? "bg-orange-500 text-white" : move.category === "special" ? "bg-blue-500 text-white" : "bg-gray-400 text-white"}`}>{move.category}</span>
+                                ) : <span className="animate-pulse bg-gray-200 h-4 w-full rounded inline-block"></span>}
+                                </td>
+                                <td className="p-2 font-bold text-gray-700 text-xs md:text-sm text-center">{move.type ? (move.power || "—") : "..."}</td>
+                                <td className="p-2 font-bold text-gray-700 text-xs md:text-sm text-center">{move.type ? (move.accuracy ? `${move.accuracy}%` : "—") : "..."}</td>
+                            </tr>
+                            ))}
+                        </tbody>
+                        </table>
+                    </div>
                   ) : (
-                    <div className="h-full flex flex-col items-center justify-center text-gray-400">
+                    <div className="h-full flex flex-col items-center justify-center text-gray-400 mt-10 md:mt-0">
                       <p className="font-bold text-sm">No moves found for this selection.</p>
                     </div>
                   )}
