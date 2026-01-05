@@ -2,6 +2,12 @@
 
 Aplikasi Pokédex ini dikembangkan sebagai bagian dari penilaian teknis untuk posisi Frontend Intern. Proyek ini dibangun menggunakan **Next.js 16 (App Router)** dan **Tailwind CSS**, dengan fokus ganda pada pemenuhan persyaratan tugas (*UI Slicing* presisi, Integrasi API) serta optimasi performa tinggi (*High Performance Engineering*).
 
+### 🚀 Live Demo / Deploy Preview
+Aplikasi dapat diakses secara langsung melalui tautan berikut:
+**[https://pokemon-app-sigma-blond.vercel.app/](https://pokemon-app-sigma-blond.vercel.app/)**
+
+---
+
 ## Fitur Utama & Arsitektur Teknis
 
 Aplikasi ini dirancang bukan hanya untuk menampilkan data, tetapi juga untuk memberikan pengalaman pengguna yang mulus melalui optimasi berikut:
@@ -33,7 +39,7 @@ CSR digunakan secara selektif untuk komponen yang membutuhkan interaktivitas tin
 * **Bahasa Pemrograman**: TypeScript (Strongly Typed).
 * **Styling**: Tailwind CSS dengan konfigurasi desain minimalis.
 * **Data Fetching**: Native Fetch API dengan implementasi kustom *Retry Logic* dan *Caching Strategy*.
-* **Deployment**: Vercel (Opsional).
+* **Deployment**: [Vercel](https://pokemon-app-sigma-blond.vercel.app/) (Production Environment).
 
 ## Endpoint API
 
