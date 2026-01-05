@@ -4,6 +4,7 @@ import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
 
+// Metadata aplikasi untuk SEO dan Favicon
 export const metadata: Metadata = {
   title: "Pokédex App",
   description: "Comprehensive Pokémon encyclopedia created with Next.js",
@@ -12,6 +13,7 @@ export const metadata: Metadata = {
   },
 };
 
+// Wrapper utama aplikasi 
 export default function RootLayout({
   children,
 }: Readonly<{

@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# project extraction tools
+extract-project.js
+full_project_code.txt
+extract tutorial.txt

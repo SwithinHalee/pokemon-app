@@ -1,3 +1,4 @@
+/* Peta warna latar belakang untuk badge tipe */
 export const TYPE_COLORS: Record<string, string> = {
   normal: "bg-gray-400",
   fire: "bg-red-500",
@@ -21,6 +22,7 @@ export const TYPE_COLORS: Record<string, string> = {
   shadow: "bg-gray-900",
 };
 
+/* Peta warna gradien untuk latar belakang halaman detail */
 export const BG_COLORS: Record<string, string> = {
   normal: "from-gray-100 to-gray-300",
   fire: "from-orange-100 to-orange-200",
@@ -44,6 +46,7 @@ export const BG_COLORS: Record<string, string> = {
   shadow: "from-gray-800 to-black",
 };
 
+/* Data pengali serangan untuk kalkulasi kelemahan tipe (Type Chart) */
 export const TYPE_DEFENSE_CHART: Record<string, Record<string, number>> = {
   normal: { fighting: 2, ghost: 0 },
   fire: { water: 2, ground: 2, rock: 2, fire: 0.5, grass: 0.5, ice: 0.5, bug: 0.5, steel: 0.5, fairy: 0.5 },
@@ -65,6 +68,7 @@ export const TYPE_DEFENSE_CHART: Record<string, Record<string, number>> = {
   dark: { fighting: 2, bug: 2, fairy: 2, ghost: 0.5, dark: 0.5, psychic: 0 },
 };
 
+/* Rentang ID dan Region pokemon berdasarkan Generasi game */
 export const GENERATION_DATA = [
   { id: "gen1", name: "Gen 1 (Kanto)", offset: 0, limit: 151 },
   { id: "gen2", name: "Gen 2 (Johto)", offset: 151, limit: 100 },

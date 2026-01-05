@@ -1,12 +1,12 @@
 export default function Loading() {
   return (
-    // Container Luar (Background Gradient simulasi)
+    // Container Luar
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4 md:p-10 animate-pulse">
       
-      {/* Card Utama (Bentuk sama dengan PokemonDetail) */}
+      {/* Card Utama */}
       <div className="bg-white rounded-[3rem] shadow-xl w-full max-w-[85rem] flex flex-col md:flex-row overflow-hidden h-[850px] relative">
         
-        {/* --- KOLOM KIRI (Skeleton Gambar & Info) --- */}
+        {/*KOLOM KIRI*/}
         <div className="md:w-[45%] py-12 pr-10 pl-10 md:pl-52 flex flex-col justify-between border-r border-gray-50">
           
           {/* Header Skeleton */}
@@ -49,7 +49,7 @@ export default function Loading() {
           </div>
         </div>
 
-        {/* --- KOLOM KANAN (Skeleton Tabs & Content) --- */}
+        {/*KOLOM KANAN*/}
         <div className="md:w-[55%] py-12 pl-10 pr-10 md:pr-52 flex flex-col bg-white">
           
           {/* Tabs Skeleton */}

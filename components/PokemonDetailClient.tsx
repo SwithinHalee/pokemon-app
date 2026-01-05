@@ -29,6 +29,7 @@ interface Props {
   nextPokemon: { id: number; name: string } | null;
 }
 
+// Tombol navigasi melayang untuk pokemon sebelumnya/berikutnya 
 const NavButton = ({ direction, id, name }: { direction: "left" | "right"; id: number; name: string }) => {
   const isLeft = direction === "left";
   return (
@@ -38,25 +39,24 @@ const NavButton = ({ direction, id, name }: { direction: "left" | "right"; id: n
         isLeft ? "left-6 lg:left-10" : "right-6 lg:right-10"
       } group transition-transform duration-300 hover:scale-105`}
     >
-      {isLeft && (
+      {isLeft ? (
         <>
           <div className="text-red-500/80 group-hover:text-red-600 transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m15 18-6-6 6-6" /></svg>
           </div>
           <div className="flex flex-col items-start">
-            <span className="text-xl md:text-2xl font-extrabold text-gray-900 leading-none tracking-tight whitespace-nowrap">#{String(id).padStart(3, "0")}</span>
+            <span className="text-xl md:text-2xl font-extrabold text-gray-900 leading-none">#{String(id).padStart(3, "0")}</span>
             <span className="text-xs font-semibold text-gray-400 capitalize mt-1 max-w-[120px] truncate">{name.replace("-", " ")}</span>
           </div>
         </>
-      )}
-      {!isLeft && (
+      ) : (
         <>
           <div className="flex flex-col items-end">
-            <span className="text-xl md:text-2xl font-extrabold text-gray-900 leading-none tracking-tight whitespace-nowrap">#{String(id).padStart(3, "0")}</span>
+            <span className="text-xl md:text-2xl font-extrabold text-gray-900 leading-none">#{String(id).padStart(3, "0")}</span>
             <span className="text-xs font-semibold text-gray-400 capitalize mt-1 max-w-[120px] truncate text-right">{name.replace("-", " ")}</span>
           </div>
           <div className="text-red-500/80 group-hover:text-red-600 transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="rotate-180"><path d="m15 18-6-6 6-6" /></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24" className="rotate-180"><path strokeLinecap="round" strokeLinejoin="round" d="m15 18-6-6 6-6" /></svg>
           </div>
         </>
       )}
@@ -64,6 +64,7 @@ const NavButton = ({ direction, id, name }: { direction: "left" | "right"; id: n
   );
 };
 
+// Komponen Utama Halaman Detail (Client Side)
 export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon }: Props) {
   const [activeTab, setActiveTab] = useState<"About" | "Moves" | "Episodes" | "Cards">("About");
   const [isShiny, setIsShiny] = useState(false);
@@ -86,9 +87,9 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
   const sprites = pokemon.sprites.other["official-artwork"];
   const currentImage = (isShiny && sprites.front_shiny) ? sprites.front_shiny : sprites.front_default;
 
- useEffect(() => {
+  // Prefetch data varian pokemon untuk performa instan
+  useEffect(() => {
     if (pokemon.varieties && pokemon.varieties.length > 1) {
-      
        const timer = setTimeout(() => {
           pokemon.varieties.forEach((v) => {
             if (v.name !== pokemon.name) {
@@ -96,11 +97,11 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
           }
         });
       }, 2000);
-
       return () => clearTimeout(timer);
     }
   }, [pokemon.varieties, pokemon.name, router]);
   
+  // Kalkulasi kelemahan tipe secara komputasi (useMemo) 
   const weaknesses = useMemo(() => {
     const allAttackingTypes = Object.keys(TYPE_DEFENSE_CHART);
     const calculatedWeaknesses: string[] = [];
@@ -120,6 +121,7 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
     return calculatedWeaknesses;
   }, [pokemon.types]);
 
+  // Filter generasi game yang tersedia untuk Moves 
   const availableGenerations = useMemo(() => {
     const gens = new Set<string>();
     pokemon.moves.forEach((moveEntry) => {
@@ -134,6 +136,7 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
     }
   }, [availableGenerations, selectedGen]);
 
+  // Filter daftar jurus (Moves) berdasarkan input user
   const visibleMoves = useMemo(() => {
     if (!selectedGen) return [];
 
@@ -163,10 +166,10 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
       });
   }, [pokemon.moves, selectedGen, selectedMethod, moveDetailsCache]);
 
+  // Fetch detail moves yang sedang dilihat secara bertahap
   useEffect(() => {
     const fetchMissingDetails = async () => {
       const missingMoves = visibleMoves.filter(m => !m.type && !moveDetailsCache[m.name]);
-
       if (missingMoves.length === 0) return;
 
       const BATCH_SIZE = 5; 
@@ -209,6 +212,7 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
     }
   }, [visibleMoves, moveDetailsCache]);
 
+  // Putar audio suara pokemon
   const playCry = () => {
     if (audioRef.current) {
       audioRef.current.volume = 0.5;
@@ -216,12 +220,14 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
     }
   };
 
+  // Dukungan scroll horizontal dengan mouse wheel
   const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
     if (scrollContainerRef.current && e.deltaY !== 0) {
       scrollContainerRef.current.scrollBy({ left: e.deltaY, behavior: "smooth" });
     }
   };
 
+  // Auto-scroll ke pokemon aktif di evolution chain 
   useEffect(() => {
     if (scrollContainerRef.current) {
       const activeElement = document.getElementById(`evo-${pokemon.name}`);
@@ -239,22 +245,23 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
         {prevPokemon && <NavButton direction="left" id={prevPokemon.id} name={prevPokemon.name} />}
         {nextPokemon && <NavButton direction="right" id={nextPokemon.id} name={nextPokemon.name} />}
 
+        {/* Kolom Kiri: Gambar, Nama, Evolusi */}
         <div className="md:w-[45%] py-12 pr-10 pl-10 md:pl-52 flex flex-col relative h-full justify-between border-r border-gray-50 overflow-hidden">
           <div className="w-full mb-4 relative z-10">
             <div className="flex items-center justify-between mb-4">
               <Link href="/" className="flex items-center gap-2 text-gray-400 hover:text-gray-900 transition-colors group">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="group-hover:-translate-x-1 transition-transform"><path d="M19 12H5" /><path d="m12 19-7-7 7-7" /></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" className="group-hover:-translate-x-1 transition-transform"><path d="M19 12H5" /><path d="m12 19-7-7 7-7" /></svg>
                 <span className="font-extrabold text-sm uppercase tracking-wider">Pokedex</span>
               </Link>
               <div className="flex items-center gap-4">
                 <span className="text-3xl font-bold text-gray-200 whitespace-nowrap">#{String(pokemon.id).padStart(3, "0")}</span>
                 <button onClick={playCry} className="p-3 bg-gray-50 rounded-full hover:bg-gray-100 text-gray-400 transition-colors active:scale-95">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" /><path d="M15.54 8.46a5 5 0 0 1 0 7.07" /><path d="M19.07 4.93a10 10 0 0 1 0 14.14" /></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" /><path d="M15.54 8.46a5 5 0 0 1 0 7.07" /><path d="M19.07 4.93a10 10 0 0 1 0 14.14" /></svg>
                 </button>
                 {pokemon.cries.latest && <audio ref={audioRef} src={pokemon.cries.latest} hidden />}
               </div>
             </div>
-            <h1 className="text-4xl lg:text-5xl font-extrabold capitalize text-gray-800 tracking-tight leading-tight break-words" title={pokemon.name}>{pokemon.name.replace("-", " ")}</h1>
+            <h1 className="text-4xl lg:text-5xl font-extrabold capitalize text-gray-800 tracking-tight leading-tight break-words">{pokemon.name.replace("-", " ")}</h1>
             <div className="flex gap-3 mt-3 flex-wrap">
               {pokemon.types.map((t) => (
                 <span key={t.type.name} className={`${TYPE_COLORS[t.type.name]} text-white px-6 py-2 rounded-full text-sm font-bold capitalize shadow-md`}>{t.type.name}</span>
@@ -275,7 +282,7 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
 
           <div className="mt-24 relative z-10 shrink-0 w-full max-w-full">
             <h3 className="text-gray-300 font-bold text-xs uppercase tracking-[0.3em] mb-5 text-center">Evolution Chain</h3>
-            <div ref={scrollContainerRef} onWheel={handleWheel} className="w-full overflow-x-auto pb-6 pt-2 px-12 scroll-smooth [-ms-overflow-style:'none'] [scrollbar-width:'none'] [&::-webkit-scrollbar]:hidden" style={{maskImage: "linear-gradient(to right, transparent, black 40px, black calc(100% - 40px), transparent)", WebkitMaskImage: "linear-gradient(to right, transparent, black 40px, black calc(100% - 40px), transparent)"}}>
+            <div ref={scrollContainerRef} onWheel={handleWheel} className="w-full overflow-x-auto pb-6 pt-2 px-12 scroll-smooth no-scrollbar">
               <div className="flex items-center justify-center min-w-full w-max gap-3 md:gap-6 mx-auto">
                 {pokemon.evolutions.map((evo, index) => (
                   <div key={evo.name} id={`evo-${evo.name}`} className="flex items-center gap-1 md:gap-3">
@@ -287,11 +294,11 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
                         <p className="text-[13px] font-bold text-gray-800 capitalize leading-none max-w-[100px] truncate">{evo.name.replace("-", " ")}</p>
                         <p className="text-[11px] text-gray-300 font-bold mt-1.5">#{String(evo.id).padStart(3, "0")}</p>
                         <div className="flex flex-nowrap gap-1 mt-2 justify-center">
-                          {evo.types.map((type) => <span key={type} className={`${TYPE_COLORS[type]} text-[9px] text-white px-2 py-0.5 rounded-full capitalize font-bold shadow-sm whitespace-nowrap`}>{type}</span>)}
+                          {evo.types.map((type) => <span key={type} className={`${TYPE_COLORS[type]} text-[9px] text-white px-2 py-0.5 rounded-full capitalize font-bold shadow-sm`}>{type}</span>)}
                         </div>
                       </div>
                     </Link>
-                    {index < pokemon.evolutions.length - 1 && <div className="text-gray-200 shrink-0"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg></div>}
+                    {index < pokemon.evolutions.length - 1 && <div className="text-gray-200 shrink-0"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg></div>}
                   </div>
                 ))}
               </div>
@@ -299,6 +306,7 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
           </div>
         </div>
 
+        {/* Kolom Kanan: Detail Statis, Moves, Tabs */}
         <div className="md:w-[55%] py-12 pl-10 pr-10 md:pr-52 bg-white flex flex-col h-full">
           <div className="flex gap-12 border-b border-gray-100 mb-8 pb-1 shrink-0">
             {["About", "Moves", "Episodes", "Cards"].map((tab) => (
@@ -308,7 +316,7 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
 
           <div className="flex-1 overflow-hidden">
             {activeTab === "About" && (
-              <div className="h-full overflow-y-auto pb-8 animate-fadeIn [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
+              <div className="h-full overflow-y-auto pb-8 animate-fadeIn no-scrollbar">
                 <div className="mb-4">
                   <h3 className="font-extrabold text-gray-900 text-sm mb-2 uppercase tracking-widest">Weaknesses</h3>
                   <div className="flex gap-2 flex-wrap">{weaknesses.length > 0 ? weaknesses.map((weakness) => <span key={weakness} className={`${TYPE_COLORS[weakness] || "bg-gray-400"} text-white px-3 py-1 rounded-lg text-xs font-bold shadow-sm capitalize`}>{weakness}</span>) : <span className="text-gray-400 text-xs italic">None</span>}</div>
@@ -326,6 +334,7 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
                   </div>
                 </div>
 
+                {/* Switcher Form/Varian khusus pokemon seperti Raichu Alola */}
                 {pokemon.varieties && pokemon.varieties.length > 1 && (
                     <div className="mb-4 mt-4">
                         <h3 className="font-extrabold text-gray-900 text-sm mb-2 uppercase tracking-widest">Forms & Varieties</h3>
@@ -335,19 +344,8 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
                                 const displayName = v.name === pokemon.speciesName 
                                   ? "Normal" 
                                   : v.name.replace(pokemon.speciesName, "").replace(/-/g, " ").trim();
-
                                 return (
-                                    <Link 
-                                      key={v.name} 
-                                      href={`/pokemon/${v.name}`}
-                                      className={`px-4 py-1 rounded-full text-xs font-bold border-2 transition-all capitalize ${
-                                        isCurrent 
-                                          ? "border-purple-600 text-purple-600 bg-purple-50" 
-                                          : "border-gray-100 text-gray-400 hover:border-purple-200 hover:text-purple-400"
-                                      }`}
-                                    >
-                                        {displayName}
-                                    </Link>
+                                    <Link key={v.name} href={`/pokemon/${v.name}`} className={`px-4 py-1 rounded-full text-xs font-bold border-2 transition-all capitalize ${isCurrent ? "border-purple-600 text-purple-600 bg-purple-50" : "border-gray-100 text-gray-400 hover:border-purple-200 hover:text-purple-400"}`}>{displayName}</Link>
                                 );
                             })}
                         </div>
@@ -373,19 +371,6 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
                       {isGenderless ? <span className="text-gray-400">N/A</span> : <><span className="text-blue-500">♂ {malePct}%</span><span className="text-pink-500">♀ {femalePct}%</span></>}
                     </div>
                   </div>
-                  <div className="col-span-3 bg-white p-3 rounded-2xl border border-gray-100 shadow-sm transition-hover hover:border-blue-100">
-                    <p className="text-gray-400 text-[10px] font-bold mb-1 uppercase tracking-tighter text-center">Abilities</p>
-                    <div className="flex gap-2 flex-wrap justify-center">
-                        {pokemon.abilities.map((a) => (
-                          <span 
-                            key={a.ability.name} 
-                            className="px-3 py-1 bg-gray-50 text-gray-700 border border-gray-100 rounded-lg text-xs font-bold capitalize shadow-sm hover:bg-blue-50 hover:border-blue-100 hover:text-blue-600 transition-colors"
-                          >
-                            {a.ability.name.replace("-", " ")}
-                          </span>
-                        ))}
-                    </div>
-                  </div>
                 </div>
                 <div>
                   <h3 className="font-extrabold text-gray-900 text-sm mb-2 uppercase tracking-widest">Stats</h3>
@@ -396,14 +381,15 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
 
             {activeTab === "Moves" && (
               <div className="h-full flex flex-col">
+                {/* Control Panel: Ganti Generasi & Metode Belajar */}
                 <div className="flex flex-wrap gap-4 mb-6 shrink-0 p-1">
                   <div className="flex flex-col gap-1 relative">
                     <label htmlFor="gen-select" className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Game Version</label>
                     <div className="relative group">
                       <select id="gen-select" value={selectedGen} onChange={(e) => setSelectedGen(e.target.value)} className="appearance-none w-full pl-4 pr-10 py-2 text-sm font-bold rounded-xl bg-gray-50 text-gray-700 border border-gray-100 hover:border-gray-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all cursor-pointer capitalize">
-                        {availableGenerations.map((gen) => <option key={gen} value={gen} className="capitalize">{gen.replace("-", " ")}</option>)}
+                        {availableGenerations.map((gen) => <option key={gen} value={gen}>{gen.replace("-", " ")}</option>)}
                       </select>
-                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 group-hover:text-blue-500 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg></div>
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 group-hover:text-blue-500 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg></div>
                     </div>
                   </div>
                   <div className="flex flex-col gap-1 relative">
@@ -416,23 +402,24 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
                         <option value="tutor">Tutor</option>
                         <option value="all">All Methods</option>
                       </select>
-                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 group-hover:text-blue-500 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg></div>
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 group-hover:text-blue-500 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg></div>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto pr-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
+                {/* Tabel daftar jurus */}
+                <div className="flex-1 overflow-y-auto pr-2 no-scrollbar">
                   {visibleMoves.length > 0 ? (
                     <table className="w-full text-left border-collapse table-fixed">
                       <thead className="sticky top-0 bg-white z-10">
                         <tr>
-                          {selectedMethod === "level-up" && <th className="p-2 w-[10%] text-[10px] font-extrabold text-gray-500 uppercase tracking-wider border-b-2 border-gray-100 text-center">Lv.</th>}
-                          <th className="p-2 w-[25%] text-[10px] font-extrabold text-gray-500 uppercase tracking-wider border-b-2 border-gray-100">Move</th>
-                          <th className="p-2 w-[20%] text-[10px] font-extrabold text-gray-500 uppercase tracking-wider border-b-2 border-gray-100">Type</th>
-                          <th className="p-2 w-[20%] text-[10px] font-extrabold text-gray-500 uppercase tracking-wider border-b-2 border-gray-100">Cat.</th>
-                          <th className="p-2 w-[10%] text-[10px] font-extrabold text-gray-500 uppercase tracking-wider border-b-2 border-gray-100 text-center">Pwr.</th>
-                          <th className="p-2 w-[10%] text-[10px] font-extrabold text-gray-500 uppercase tracking-wider border-b-2 border-gray-100 text-center">Acc.</th>
-                          <th className="p-2 w-[5%] text-[10px] font-extrabold text-gray-500 uppercase tracking-wider border-b-2 border-gray-100 text-center">PP</th>
+                          {selectedMethod === "level-up" && <th className="p-2 w-[10%] text-[10px] font-extrabold text-gray-500 uppercase text-center">Lv.</th>}
+                          <th className="p-2 w-[25%] text-[10px] font-extrabold text-gray-500 uppercase">Move</th>
+                          <th className="p-2 w-[20%] text-[10px] font-extrabold text-gray-500 uppercase">Type</th>
+                          <th className="p-2 w-[20%] text-[10px] font-extrabold text-gray-500 uppercase">Cat.</th>
+                          <th className="p-2 w-[10%] text-[10px] font-extrabold text-gray-500 uppercase text-center">Pwr.</th>
+                          <th className="p-2 w-[10%] text-[10px] font-extrabold text-gray-500 uppercase text-center">Acc.</th>
+                          <th className="p-2 w-[5%] text-[10px] font-extrabold text-gray-500 uppercase text-center">PP</th>
                         </tr>
                       </thead>
                       <tbody>

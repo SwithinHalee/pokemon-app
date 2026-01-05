@@ -2,6 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Kustomisasi scrollbar untuk browser Webkit */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -20,6 +21,7 @@
   background-color: #cbd5e1;
 }
 
+/* Animasi muncul dari bawah ke atas */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(5px); }
   to { opacity: 1; transform: translateY(0); }
