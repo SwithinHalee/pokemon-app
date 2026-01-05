@@ -86,7 +86,7 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
   const sprites = pokemon.sprites.other["official-artwork"];
   const currentImage = (isShiny && sprites.front_shiny) ? sprites.front_shiny : sprites.front_default;
 
-  // Utility class untuk menyembunyikan scrollbar tapi tetap bisa discroll
+  // Utility class
   const hideScrollbarClass = "[&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]";
 
   useEffect(() => {
@@ -278,7 +278,7 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
 
           <div className="mt-8 md:mt-24 relative z-10 shrink-0 w-full max-w-full">
             <h3 className="text-gray-300 font-bold text-[10px] md:text-xs uppercase tracking-[0.3em] mb-3 md:mb-5 text-center">Evolution Chain</h3>
-            {/* HIDE SCROLLBAR ADDED HERE */}
+            
             <div ref={scrollContainerRef} onWheel={handleWheel} className={`w-full overflow-x-auto pb-4 pt-2 px-4 md:px-12 scroll-smooth ${hideScrollbarClass}`}>
               <div className="flex items-center justify-center min-w-full w-max gap-3 md:gap-6 mx-auto">
                 {pokemon.evolutions.map((evo, index) => (
@@ -288,8 +288,17 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
                         {evo.image && <PokemonImage src={evo.image} alt={evo.name} width={90} height={90} className="object-contain" />}
                       </div>
                       <div className="text-center flex flex-col items-center">
-                        <p className="text-[11px] md:text-[13px] font-bold text-gray-800 capitalize leading-none max-w-[80px] md:max-w-[100px] truncate">{evo.name.replace("-", " ")}</p>
-                        <p className="hidden md:block text-[11px] text-gray-300 font-bold mt-1.5">#{String(evo.id).padStart(3, "0")}</p>
+                        <p className="text-[11px] md:text-[13px] font-bold text-gray-800 capitalize leading-tight text-center">{evo.name.replace("-", " ")}</p>
+                        <p className="hidden md:block text-[11px] text-gray-300 font-bold mt-2">#{String(evo.id).padStart(3, "0")}</p>
+                        
+                        {/* FITUR DIKEMBALIKAN: TYPE BADGES */}
+                        <div className="flex flex-nowrap gap-1 mt-1.5 justify-center">
+                           {evo.types.map((type) => (
+                              <span key={type} className={`${TYPE_COLORS[type]} text-[8px] md:text-[9px] text-white px-1.5 md:px-2 py-0.5 rounded-full capitalize font-bold shadow-sm`}>
+                                 {type}
+                              </span>
+                           ))}
+                        </div>
                       </div>
                     </Link>
                     {index < pokemon.evolutions.length - 1 && <div className="text-gray-200 shrink-0 scale-75 md:scale-100"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg></div>}
@@ -302,7 +311,6 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
 
         {/* Kolom Kanan */}
         <div className="w-full md:w-[55%] py-8 px-6 md:py-12 md:pl-10 md:pr-10 lg:pr-52 bg-white flex flex-col h-[600px] md:h-full rounded-t-[2rem] md:rounded-none shadow-[0_-10px_40px_rgba(0,0,0,0.05)] md:shadow-none">
-          {/* HIDE SCROLLBAR ADDED HERE */}
           <div className={`flex gap-8 md:gap-12 border-b border-gray-100 mb-6 md:mb-8 pb-1 shrink-0 overflow-x-auto ${hideScrollbarClass}`}>
             {["About", "Moves", "Episodes", "Cards"].map((tab) => (
               <button key={tab} onClick={() => setActiveTab(tab as any)} className={`capitalize pb-4 font-bold text-sm md:text-base transition-all relative whitespace-nowrap ${activeTab === tab ? "text-gray-900 after:absolute after:bottom-0 after:left-0 after:w-full after:h-[4px] after:bg-blue-600 after:rounded-full" : "text-gray-300 hover:text-gray-500"}`}>{tab}</button>
@@ -311,7 +319,6 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
 
           <div className="flex-1 overflow-hidden">
             {activeTab === "About" && (
-              /* HIDE SCROLLBAR ADDED HERE */
               <div className={`h-full overflow-y-auto pb-8 animate-fadeIn pr-1 ${hideScrollbarClass}`}>
                 <div className="mb-6">
                   <h3 className="font-extrabold text-gray-900 text-xs md:text-sm mb-2 uppercase tracking-widest">Weaknesses</h3>
@@ -401,10 +408,8 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
                   </div>
                 </div>
 
-                {/* HIDE SCROLLBAR ADDED HERE */}
                 <div className={`flex-1 overflow-y-auto pr-0 md:pr-2 ${hideScrollbarClass}`}>
                   {visibleMoves.length > 0 ? (
-                    /* HIDE SCROLLBAR ADDED HERE TOO */
                     <div className={`overflow-x-auto pb-4 ${hideScrollbarClass}`}>
                         <table className="w-full text-left border-collapse min-w-[500px] md:min-w-0 table-fixed">
                         <thead className="sticky top-0 bg-white z-10">
