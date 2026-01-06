@@ -127,4 +127,6 @@ Berikut adalah struktur direktori utama aplikasi beserta penjelasannya:
 ├── types/                # Definisi Interface TypeScript
 │   └── index.ts          # Kontrak data global untuk objek Pokémon & Evolusi
 ├── public/               # Aset statis (Gambar default/Icons)
+├── tailwind.config.ts    # Konfigurasi tema, plugin, & content path Tailwind CSS
+├── package.json          # Manifest dependensi proyek & skrip npm (dev/build)
 └── README.md             # Dokumentasi Proyek
