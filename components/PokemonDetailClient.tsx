@@ -29,7 +29,7 @@ interface Props {
   nextPokemon: { id: number; name: string } | null;
 }
 
-// Tombol navigasi melayang
+// Tombol navigasi melayang (Hanya Desktop)
 const NavButton = ({ direction, id, name }: { direction: "left" | "right"; id: number; name: string }) => {
   const isLeft = direction === "left";
   return (
@@ -71,6 +71,12 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
   const [selectedMethod, setSelectedMethod] = useState<string>("level-up");
   const [moveDetailsCache, setMoveDetailsCache] = useState<Record<string, MoveDetailInfo>>({});
   
+  // --- SWIPE GESTURE STATE ---
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const minSwipeDistance = 50; // Jarak minimal geser agar dianggap swipe
+  // ---------------------------
+
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const router = useRouter(); 
@@ -86,8 +92,34 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
   const sprites = pokemon.sprites.other["official-artwork"];
   const currentImage = (isShiny && sprites.front_shiny) ? sprites.front_shiny : sprites.front_default;
 
-  // Utility class
   const hideScrollbarClass = "[&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]";
+
+  // --- SWIPE LOGIC HANDLERS ---
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe && nextPokemon) {
+      router.push(`/pokemon/${nextPokemon.name}`);
+    }
+    
+    if (isRightSwipe && prevPokemon) {
+      router.push(`/pokemon/${prevPokemon.name}`);
+    }
+  };
+  // ----------------------------
 
   useEffect(() => {
     if (pokemon.varieties && pokemon.varieties.length > 1) {
@@ -234,7 +266,13 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
   }, [pokemon.name, pokemon.evolutions]);
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br ${bgGradient} flex items-center justify-center p-0 md:p-10`}>
+    // HANDLER SWIPE DITEMPEL DI DIV UTAMA
+    <div 
+      className={`min-h-screen bg-gradient-to-br ${bgGradient} flex items-center justify-center p-0 md:p-10`}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+    >
       <div className="bg-white rounded-none md:rounded-[3rem] shadow-2xl w-full max-w-[85rem] flex flex-col md:flex-row overflow-hidden h-auto md:h-[850px] relative">
         
         {prevPokemon && <NavButton direction="left" id={prevPokemon.id} name={prevPokemon.name} />}
@@ -290,8 +328,6 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
                       <div className="text-center flex flex-col items-center">
                         <p className="text-[11px] md:text-[13px] font-bold text-gray-800 capitalize leading-tight text-center">{evo.name.replace("-", " ")}</p>
                         <p className="hidden md:block text-[11px] text-gray-300 font-bold mt-2">#{String(evo.id).padStart(3, "0")}</p>
-                        
-                        {/* FITUR DIKEMBALIKAN: TYPE BADGES */}
                         <div className="flex flex-nowrap gap-1 mt-1.5 justify-center">
                            {evo.types.map((type) => (
                               <span key={type} className={`${TYPE_COLORS[type]} text-[8px] md:text-[9px] text-white px-1.5 md:px-2 py-0.5 rounded-full capitalize font-bold shadow-sm`}>
