@@ -29,7 +29,6 @@ interface Props {
   nextPokemon: { id: number; name: string } | null;
 }
 
-// Tombol navigasi melayang (Hanya Desktop)
 const NavButton = ({ direction, id, name }: { direction: "left" | "right"; id: number; name: string }) => {
   const isLeft = direction === "left";
   return (
@@ -71,11 +70,10 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
   const [selectedMethod, setSelectedMethod] = useState<string>("level-up");
   const [moveDetailsCache, setMoveDetailsCache] = useState<Record<string, MoveDetailInfo>>({});
   
-  // --- SWIPE GESTURE STATE ---
+  // Swipe State
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
-  const minSwipeDistance = 50; // Jarak minimal geser agar dianggap swipe
-  // ---------------------------
+  const minSwipeDistance = 50; 
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -94,7 +92,6 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
 
   const hideScrollbarClass = "[&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]";
 
-  // --- SWIPE LOGIC HANDLERS ---
   const onTouchStart = (e: React.TouchEvent) => {
     setTouchEnd(null);
     setTouchStart(e.targetTouches[0].clientX);
@@ -106,20 +103,13 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
 
   const onTouchEnd = () => {
     if (!touchStart || !touchEnd) return;
-    
     const distance = touchStart - touchEnd;
     const isLeftSwipe = distance > minSwipeDistance;
     const isRightSwipe = distance < -minSwipeDistance;
 
-    if (isLeftSwipe && nextPokemon) {
-      router.push(`/pokemon/${nextPokemon.name}`);
-    }
-    
-    if (isRightSwipe && prevPokemon) {
-      router.push(`/pokemon/${prevPokemon.name}`);
-    }
+    if (isLeftSwipe && nextPokemon) router.push(`/pokemon/${nextPokemon.name}`);
+    if (isRightSwipe && prevPokemon) router.push(`/pokemon/${prevPokemon.name}`);
   };
-  // ----------------------------
 
   useEffect(() => {
     if (pokemon.varieties && pokemon.varieties.length > 1) {
@@ -266,7 +256,6 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
   }, [pokemon.name, pokemon.evolutions]);
 
   return (
-    // HANDLER SWIPE DITEMPEL DI DIV UTAMA
     <div 
       className={`min-h-screen bg-gradient-to-br ${bgGradient} flex items-center justify-center p-0 md:p-10`}
       onTouchStart={onTouchStart}
@@ -295,7 +284,13 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
                 {pokemon.cries.latest && <audio ref={audioRef} src={pokemon.cries.latest} hidden />}
               </div>
             </div>
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold capitalize text-gray-800 tracking-tight leading-tight break-words">{pokemon.name.replace("-", " ")}</h1>
+            
+            {/* NAME & TYPE BADGES */}
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold capitalize text-gray-800 tracking-tight leading-tight break-words flex items-center gap-2">
+              {pokemon.name.replace("-", " ")}
+              {/* Optional: Indikator Shiny Kecil di Judul jika aktif */}
+              {isShiny && <span className="text-xl md:text-3xl animate-pulse" title="Shiny Mode Active">✨</span>}
+            </h1>
             <div className="flex gap-2 md:gap-3 mt-3 flex-wrap">
               {pokemon.types.map((t) => (
                 <span key={t.type.name} className={`${TYPE_COLORS[t.type.name]} text-white px-4 md:px-6 py-1.5 md:py-2 rounded-full text-xs md:text-sm font-bold capitalize shadow-md`}>{t.type.name}</span>
@@ -303,15 +298,26 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
             </div>
           </div>
 
-          <div className="flex-1 flex items-center justify-center relative shrink min-h-[250px] md:min-h-0 my-4 md:my-0">
-            <div className="relative w-52 h-52 md:w-[350px] md:h-[350px] z-20 transition-transform duration-700 hover:scale-105 translate-y-4 md:translate-y-14">
+          <div className="flex-1 flex flex-col items-center justify-center relative shrink min-h-[250px] md:min-h-0 my-4 md:my-0">
+            {/* --- SOLUSI SIMPLE: GAMBAR BISA DIKLIK (TAP TO TOGGLE) --- */}
+            {/* - cursor-pointer: Menunjukkan bisa diklik di desktop.
+                - active:scale-90: Efek visual 'ditekan' di HP.
+                - onClick: Trigger ganti mode.
+            */}
+            <div 
+                className="relative w-52 h-52 md:w-[350px] md:h-[350px] z-20 transition-transform duration-200 active:scale-90 cursor-pointer"
+                onClick={() => setIsShiny(prev => !prev)}
+                title="Tap image to toggle Shiny ✨"
+            >
               {currentImage ? (
                  <PokemonImage key={currentImage} src={currentImage} alt={pokemon.name} width={500} height={500} className="object-contain drop-shadow-2xl" />
               ) : (
                  <div className="w-full h-full flex items-center justify-center text-gray-300 font-bold">No Image Available</div>
               )}
             </div>
-            <div className="absolute w-[280px] h-[280px] md:w-[380px] md:h-[380px] bg-gray-100/40 rounded-full blur-[60px] md:blur-[90px] -z-10 translate-y-4 md:translate-y-14" />
+            {/* --------------------------------------------------------- */}
+
+            <div className="absolute w-[280px] h-[280px] md:w-[380px] md:h-[380px] bg-gray-100/40 rounded-full blur-[60px] md:blur-[90px] -z-10 translate-y-4 md:translate-y-4" />
           </div>
 
           <div className="mt-8 md:mt-24 relative z-10 shrink-0 w-full max-w-full">
@@ -365,6 +371,7 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
                   <p className="text-gray-500 text-sm leading-relaxed font-medium max-w-xl">{pokemon.story}</p>
                 </div>
                 
+                {/* Tombol di bawah ini tetap ada sebagai fallback/setting, tapi user juga bisa tap gambar */}
                 <div className="mb-4">
                   <h3 className="font-extrabold text-gray-900 text-xs md:text-sm mb-2 uppercase tracking-widest">Appearance</h3>
                   <div className="flex gap-2">
