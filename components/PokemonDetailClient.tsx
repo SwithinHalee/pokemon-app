@@ -258,6 +258,7 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
   return (
     <div 
       className={`min-h-screen bg-gradient-to-br ${bgGradient} flex items-center justify-center p-0 md:p-10`}
+      // Global Swipe Handlers
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
@@ -285,10 +286,8 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
               </div>
             </div>
             
-            {/* NAME & TYPE BADGES */}
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold capitalize text-gray-800 tracking-tight leading-tight break-words flex items-center gap-2">
               {pokemon.name.replace("-", " ")}
-              {/* Optional: Indikator Shiny Kecil di Judul jika aktif */}
               {isShiny && <span className="text-xl md:text-3xl animate-pulse" title="Shiny Mode Active">✨</span>}
             </h1>
             <div className="flex gap-2 md:gap-3 mt-3 flex-wrap">
@@ -299,11 +298,7 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
           </div>
 
           <div className="flex-1 flex flex-col items-center justify-center relative shrink min-h-[250px] md:min-h-0 my-4 md:my-0">
-            {/* --- SOLUSI SIMPLE: GAMBAR BISA DIKLIK (TAP TO TOGGLE) --- */}
-            {/* - cursor-pointer: Menunjukkan bisa diklik di desktop.
-                - active:scale-90: Efek visual 'ditekan' di HP.
-                - onClick: Trigger ganti mode.
-            */}
+            {/* TAP TO TOGGLE IMAGE */}
             <div 
                 className="relative w-52 h-52 md:w-[350px] md:h-[350px] z-20 transition-transform duration-200 active:scale-90 cursor-pointer"
                 onClick={() => setIsShiny(prev => !prev)}
@@ -315,7 +310,6 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
                  <div className="w-full h-full flex items-center justify-center text-gray-300 font-bold">No Image Available</div>
               )}
             </div>
-            {/* --------------------------------------------------------- */}
 
             <div className="absolute w-[280px] h-[280px] md:w-[380px] md:h-[380px] bg-gray-100/40 rounded-full blur-[60px] md:blur-[90px] -z-10 translate-y-4 md:translate-y-4" />
           </div>
@@ -371,7 +365,6 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
                   <p className="text-gray-500 text-sm leading-relaxed font-medium max-w-xl">{pokemon.story}</p>
                 </div>
                 
-                {/* Tombol di bawah ini tetap ada sebagai fallback/setting, tapi user juga bisa tap gambar */}
                 <div className="mb-4">
                   <h3 className="font-extrabold text-gray-900 text-xs md:text-sm mb-2 uppercase tracking-widest">Appearance</h3>
                   <div className="flex gap-2">
@@ -453,7 +446,12 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
 
                 <div className={`flex-1 overflow-y-auto pr-0 md:pr-2 ${hideScrollbarClass}`}>
                   {visibleMoves.length > 0 ? (
-                    <div className={`overflow-x-auto pb-4 ${hideScrollbarClass}`}>
+                    <div 
+                      className={`overflow-x-auto pb-4 ${hideScrollbarClass}`}
+                      onTouchStart={(e) => e.stopPropagation()}
+                      onTouchMove={(e) => e.stopPropagation()}
+                      onTouchEnd={(e) => e.stopPropagation()}
+                    >
                         <table className="w-full text-left border-collapse min-w-[500px] md:min-w-0 table-fixed">
                         <thead className="sticky top-0 bg-white z-10">
                             <tr>
