@@ -70,10 +70,11 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
   const [selectedMethod, setSelectedMethod] = useState<string>("level-up");
   const [moveDetailsCache, setMoveDetailsCache] = useState<Record<string, MoveDetailInfo>>({});
   
-  // Swipe State
-  const [touchStart, setTouchStart] = useState<number | null>(null);
-  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  // --- UPDATED SWIPE STATE (Menyimpan koordinat X dan Y) ---
+  const [touchStart, setTouchStart] = useState<{ x: number, y: number } | null>(null);
+  const [touchEnd, setTouchEnd] = useState<{ x: number, y: number } | null>(null);
   const minSwipeDistance = 50; 
+  // ---------------------------------------------------------
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -92,24 +93,43 @@ export default function PokemonDetailClient({ pokemon, prevPokemon, nextPokemon 
 
   const hideScrollbarClass = "[&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]";
 
+  // --- UPDATED SWIPE LOGIC ---
   const onTouchStart = (e: React.TouchEvent) => {
     setTouchEnd(null);
-    setTouchStart(e.targetTouches[0].clientX);
+    setTouchStart({ 
+        x: e.targetTouches[0].clientX, 
+        y: e.targetTouches[0].clientY // Simpan posisi awal Y
+    });
   };
 
   const onTouchMove = (e: React.TouchEvent) => {
-    setTouchEnd(e.targetTouches[0].clientX);
+    setTouchEnd({ 
+        x: e.targetTouches[0].clientX, 
+        y: e.targetTouches[0].clientY // Simpan posisi akhir Y
+    });
   };
 
   const onTouchEnd = () => {
     if (!touchStart || !touchEnd) return;
-    const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > minSwipeDistance;
-    const isRightSwipe = distance < -minSwipeDistance;
+    
+    const distanceX = touchStart.x - touchEnd.x;
+    const distanceY = touchStart.y - touchEnd.y;
+    
+    const isLeftSwipe = distanceX > minSwipeDistance;
+    const isRightSwipe = distanceX < -minSwipeDistance;
+
+    // --- LOGIKA UTAMA PERBAIKAN ---
+    // Cek apakah gerakan Horizontal lebih dominan daripada Vertikal
+    // Jika user scroll ke bawah (Jarak Y > Jarak X), abaikan swipe navigasi.
+    if (Math.abs(distanceX) < Math.abs(distanceY)) {
+        return; 
+    }
+    // ------------------------------
 
     if (isLeftSwipe && nextPokemon) router.push(`/pokemon/${nextPokemon.name}`);
     if (isRightSwipe && prevPokemon) router.push(`/pokemon/${prevPokemon.name}`);
   };
+  // ---------------------------
 
   useEffect(() => {
     if (pokemon.varieties && pokemon.varieties.length > 1) {
