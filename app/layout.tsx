@@ -6,12 +6,18 @@ const inter = Inter({ subsets: ["latin"] });
 
 // Metadata aplikasi untuk SEO dan Favicon
 export const metadata: Metadata = {
-  title: "Pokédex App",
-  description: "Comprehensive Pokémon encyclopedia created with Next.js",
+  title: "Pokedex Joshua",
+  description: "Aplikasi Pokedex modern dibuat dengan Next.js",
   manifest: "/manifest.json",
   icons: {
-    icon: "/favicon.ico",
-    apple: "/icon-192x192.png",
+    icon: [
+      { url: '/icon-192x192.png', type: 'image/png' },
+      { url: '/icon-512x512.png', type: 'image/png' },
+    ],
+    shortcut: ['/icon-192x192.png'],
+    apple: [
+      { url: '/icon-192x192.png' },
+    ],
   },
 };
 
