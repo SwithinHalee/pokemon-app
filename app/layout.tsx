@@ -8,8 +8,10 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Pokédex App",
   description: "Comprehensive Pokémon encyclopedia created with Next.js",
+  manifest: "/manifest.json",
   icons: {
     icon: "/favicon.ico",
+    apple: "/icon-192x192.png",
   },
 };
 
