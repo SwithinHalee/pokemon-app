@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "app.vercel.pokemon_app_sigma_blond.twa",
+        "sha256_cert_fingerprints": ["05:E9:5E:97:EE:84:4D:30:47:E3:14:71:7F:94:88:8E:76:73:F3:24:86:A4:8B:E1:70:E1:D1:EB:48:26:E3:72"]
+      }
+    }]
