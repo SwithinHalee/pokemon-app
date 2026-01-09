@@ -1,6 +1,7 @@
-# Frontend Intern Assignment - Pokédex Application
+[![Download APK](https://img.shields.io/badge/Download-Android_App-success?style=for-the-badge&logo=android)](https://github.com/SwithinHalee/pokemon-app/releases/download/v1.0.0/Pokedex.apk)
+# Pokédex Application
 
-Aplikasi Pokédex ini dikembangkan sebagai bagian dari penilaian teknis untuk posisi Frontend Intern. Proyek ini dibangun menggunakan **Next.js 16 (App Router)** dan **Tailwind CSS**, dengan fokus ganda pada pemenuhan persyaratan tugas (*UI Slicing* presisi, Integrasi API) serta optimasi performa tinggi (*High Performance Engineering*).
+Proyek ini dibangun menggunakan **Next.js 16 (App Router)** dan **Tailwind CSS**, dengan fokus ganda pada pemenuhan persyaratan tugas (*UI Slicing* presisi, Integrasi API) serta optimasi performa tinggi (*High Performance Engineering*).
 
 ### Live Demo / Deploy Preview
 Aplikasi dapat diakses secara langsung melalui tautan berikut:
@@ -27,7 +28,7 @@ Aplikasi ini dirancang bukan hanya untuk menampilkan data, tetapi juga untuk mem
 
 ## Implementasi SSR dan CSR
 
-Sesuai dengan persyaratan teknis tugas, proyek ini menerapkan strategi rendering hibrida untuk menyeimbangkan performa SEO dan interaktivitas pengguna:
+Proyek ini menerapkan strategi rendering hibrida untuk menyeimbangkan performa SEO dan interaktivitas pengguna:
 
 ### Server Side Rendering (SSR)
 SSR digunakan sebagai strategi utama untuk *data fetching* guna memastikan performa *First Contentful Paint* (FCP) yang optimal dan SEO yang baik.
