@@ -41,6 +41,6 @@ yarn-error.log*
 next-env.d.ts
 
 # project extraction tools
-extract-project.js
+extract-projects.js
 full_project_code.txt
 extract tutorial.txt
